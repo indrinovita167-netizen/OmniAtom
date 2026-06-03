@@ -1,0 +1,2345 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Omni-Atom V29 — Lab Interaktif</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<script type="importmap">
+  { "imports": { "three": "https://unpkg.com/three@0.160.0/build/three.module.js", "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/" } }
+</script>
+<style>
+:root {
+  --bg: #0d0f12;
+  --surface: #13161b;
+  --panel: #181c23;
+  --border: rgba(255,255,255,0.07);
+  --accent: #00e5a0;
+  --accent2: #6c63ff;
+  --accent3: #ff6b6b;
+  --text: #e8eaf0;
+  --muted: #6b7280;
+  --mono: 'Space Mono', monospace;
+  --sans: 'DM Sans', sans-serif;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--sans);
+  overflow: hidden;
+  height: 100vh;
+  width: 100vw;
+}
+
+/* ── LAYOUT ── */
+#app {
+  display: grid;
+  grid-template-columns: 64px 1fr 420px;
+  grid-template-rows: 52px 1fr 220px;
+  width: 100vw;
+  height: 100vh;
+}
+
+/* ── HEADER ── */
+#header {
+  grid-column: 1 / -1;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  padding: 0 20px;
+  gap: 16px;
+  position: relative;
+  z-index: 20;
+}
+.logo {
+  font-family: var(--mono);
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--accent);
+  letter-spacing: 3px;
+  flex-shrink: 0;
+}
+.header-divider { width: 1px; height: 24px; background: var(--border); }
+.search-wrap {
+  position: relative;
+  flex: 1;
+  max-width: 300px;
+}
+.search-wrap input {
+  width: 100%;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 7px 12px 7px 34px;
+  border-radius: 8px;
+  font-family: var(--sans);
+  font-size: 13px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+.search-wrap input:focus { border-color: var(--accent); }
+.search-wrap .si {
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--muted);
+  font-size: 14px;
+  pointer-events: none;
+}
+.header-tabs { display: flex; gap: 4px; margin-left: auto; }
+.htab {
+  padding: 6px 14px;
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+.htab:hover { color: var(--text); border-color: var(--border); }
+.htab.active { color: var(--accent); border-color: var(--accent); background: rgba(0,229,160,0.07); }
+#lang-select {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 5px 8px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-family: var(--mono);
+  cursor: pointer;
+  outline: none;
+}
+
+/* ── SIDEBAR ── */
+#sidebar {
+  grid-column: 1;
+  grid-row: 2 / 4;
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 16px 0;
+  gap: 8px;
+  z-index: 10;
+}
+.stool {
+  width: 44px;
+  height: 44px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  color: var(--muted);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 18px;
+}
+.stool:hover { color: var(--accent); border-color: rgba(0,229,160,0.3); }
+.stool.active { color: var(--accent); background: rgba(0,229,160,0.1); border-color: rgba(0,229,160,0.4); }
+.stool small { font-size: 7px; font-family: var(--mono); margin-top: 2px; letter-spacing: 0.5px; }
+
+/* ── MAIN CONTENT AREA ── */
+#main {
+  grid-column: 2;
+  grid-row: 2;
+  display: grid;
+  grid-template-columns: 380px 1fr;
+  overflow: hidden;
+}
+
+/* ── INFO PANEL ── */
+#info-panel {
+  background: var(--panel);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.ip-header {
+  padding: 20px 22px 16px;
+  border-bottom: 1px solid var(--border);
+}
+.el-symbol {
+  font-family: var(--mono);
+  font-size: 56px;
+  font-weight: 700;
+  color: var(--accent);
+  line-height: 1;
+  margin-bottom: 4px;
+}
+.el-name { font-size: 20px; font-weight: 500; color: var(--text); }
+.el-cat {
+  display: inline-block;
+  font-size: 10px;
+  font-family: var(--mono);
+  font-weight: 700;
+  letter-spacing: 1px;
+  padding: 3px 10px;
+  border-radius: 20px;
+  margin-top: 8px;
+}
+.ip-tabs { display: flex; background: var(--surface); border-bottom: 1px solid var(--border); }
+.iptab {
+  flex: 1;
+  padding: 10px 4px;
+  background: transparent;
+  border: none;
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.8px;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: all 0.2s;
+}
+.iptab:hover { color: var(--text); }
+.iptab.active { color: var(--accent); border-bottom-color: var(--accent); }
+#ip-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px 22px;
+  font-size: 13px;
+  line-height: 1.7;
+  color: #b0b8c8;
+}
+#ip-content::-webkit-scrollbar { width: 4px; }
+#ip-content::-webkit-scrollbar-track { background: transparent; }
+#ip-content::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+.ip-section { margin-bottom: 20px; }
+.ip-label {
+  font-family: var(--mono);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  color: var(--muted);
+  text-transform: uppercase;
+  margin-bottom: 8px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--border);
+}
+.kv-row { display: flex; justify-content: space-between; padding: 5px 0; border-bottom: 1px solid rgba(255,255,255,0.03); }
+.kv-key { color: var(--muted); font-size: 12px; }
+.kv-val { font-family: var(--mono); font-size: 12px; color: var(--text); font-weight: 700; }
+.conf-box {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px;
+  font-family: var(--mono);
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--accent);
+  word-break: break-all;
+}
+.ai-result {
+  background: var(--surface);
+  border: 1px solid rgba(0,229,160,0.2);
+  border-radius: 10px;
+  padding: 14px 16px;
+  font-size: 13px;
+  line-height: 1.7;
+  color: #c8d0e0;
+  white-space: pre-wrap;
+}
+.ai-loading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--muted);
+  font-size: 12px;
+  font-family: var(--mono);
+}
+.dot-pulse { display: flex; gap: 4px; }
+.dot-pulse span {
+  width: 6px; height: 6px;
+  background: var(--accent);
+  border-radius: 50%;
+  animation: pulse 1.2s infinite;
+}
+.dot-pulse span:nth-child(2) { animation-delay: 0.2s; }
+.dot-pulse span:nth-child(3) { animation-delay: 0.4s; }
+@keyframes pulse { 0%,80%,100%{opacity:0.2;transform:scale(0.8)} 40%{opacity:1;transform:scale(1)} }
+
+/* ── 3D VIZ ── */
+#viz {
+  position: relative;
+  overflow: hidden;
+  background: radial-gradient(ellipse at 50% 40%, #1a2035 0%, #0d0f12 70%);
+}
+#container-3d { width: 100%; height: 100%; }
+#hud {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  pointer-events: none;
+}
+.hud-sym { font-family: var(--mono); font-size: 80px; font-weight: 700; color: var(--accent); opacity: 0.08; line-height: 1; }
+.hud-z { font-family: var(--mono); font-size: 13px; color: var(--muted); margin-top: 4px; }
+#viz-controls {
+  position: absolute;
+  bottom: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 6px;
+}
+.vctrl {
+  padding: 6px 14px;
+  background: rgba(13,15,18,0.8);
+  border: 1px solid var(--border);
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  border-radius: 20px;
+  cursor: pointer;
+  transition: all 0.2s;
+  backdrop-filter: blur(8px);
+}
+.vctrl:hover { color: var(--text); border-color: rgba(255,255,255,0.2); }
+.vctrl.active { color: var(--accent); border-color: var(--accent); background: rgba(0,229,160,0.1); }
+
+/* ── RIGHT PANEL ── */
+#right-panel {
+  grid-column: 3;
+  grid-row: 2 / 4;
+  background: var(--panel);
+  border-left: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+#right-panel-inner {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px;
+}
+#right-panel-inner::-webkit-scrollbar { width: 4px; }
+#right-panel-inner::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+.rp-section { margin-bottom: 24px; }
+.rp-title {
+  font-family: var(--mono);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  color: var(--muted);
+  text-transform: uppercase;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+}
+
+/* TOOLS */
+.tool-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 12px;
+}
+.tool-card h4 {
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--accent);
+  letter-spacing: 1px;
+  margin-bottom: 10px;
+}
+.tool-input {
+  width: 100%;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-family: var(--sans);
+  font-size: 13px;
+  outline: none;
+  margin-bottom: 8px;
+  transition: border-color 0.2s;
+}
+.tool-input:focus { border-color: var(--accent); }
+.tool-btn {
+  width: 100%;
+  padding: 8px;
+  background: rgba(0,229,160,0.1);
+  border: 1px solid var(--accent);
+  color: var(--accent);
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.tool-btn:hover { background: rgba(0,229,160,0.2); }
+.tool-btn.active { background: rgba(0,229,160,0.3); border-color: #00e5a0; box-shadow: 0 0 8px rgba(0,229,160,0.3); }
+.tool-result {
+  margin-top: 10px;
+  background: var(--panel);
+  border: 1px solid rgba(0,229,160,0.15);
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 12px;
+  line-height: 1.7;
+  color: #b0b8c8;
+  display: none;
+  white-space: pre-wrap;
+}
+.tool-result.show { display: block; }
+
+/* STAT CARDS */
+.stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.stat-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px;
+  text-align: center;
+}
+.stat-val { font-family: var(--mono); font-size: 18px; font-weight: 700; color: var(--accent); }
+.stat-lbl { font-size: 10px; color: var(--muted); margin-top: 3px; }
+
+/* ── PERIODIC TABLE ── */
+#table-panel {
+  grid-column: 2;
+  grid-row: 3;
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  padding: 10px 12px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+#grid {
+  flex: 1;
+  display: grid;
+  grid-template-columns: repeat(18, 1fr);
+  grid-template-rows: repeat(10, 1fr);
+  gap: 2px;
+}
+.el-cell {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  transition: all 0.1s;
+  overflow: hidden;
+}
+.el-cell::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+}
+.el-cell:hover { transform: scale(1.3); z-index: 100; border-color: var(--accent); box-shadow: 0 0 12px rgba(0,229,160,0.3); }
+.el-cell.sel { background: var(--accent); color: #000; border-color: var(--accent); }
+.el-cell.sel strong { color: #000; }
+.el-cell.sel span { color: rgba(0,0,0,0.6); }
+.el-cell strong { font-size: 10px; font-family: var(--mono); color: var(--text); }
+.el-cell span { font-size: 7px; color: var(--muted); position: absolute; top: 1px; left: 2px; font-family: var(--mono); }
+
+/* Category colors */
+.cc1::after  { background: #ef5350; }
+.cc2::after  { background: #ff9800; }
+.cc3::after  { background: #42a5f5; }
+.cc4::after  { background: #8d6e63; }
+.cc5::after  { background: #66bb6a; }
+.cc6::after  { background: #ffee58; }
+.cc7::after  { background: #78909c; }
+.cc8::after  { background: #ab47bc; }
+.cc9::after  { background: #4dd0e1; }
+.cc10::after { background: #455a64; }
+
+/* ── MODALS ── */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.7);
+  z-index: 1000;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(4px);
+}
+.modal-overlay.open { display: flex; }
+.modal-box {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  width: 500px;
+  max-width: 90vw;
+  overflow: hidden;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+}
+.modal-head {
+  padding: 16px 20px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-family: var(--mono);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: var(--accent);
+}
+.modal-close { cursor: pointer; color: var(--muted); font-size: 18px; transition: color 0.2s; }
+.modal-close:hover { color: var(--accent3); }
+.modal-body { padding: 24px; }
+
+/* ── LANDING ── */
+#landing {
+  position: fixed;
+  inset: 0;
+  background: var(--bg);
+  z-index: 5000;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  transition: opacity 0.5s, visibility 0.5s;
+}
+.land-title {
+  font-family: var(--mono);
+  font-size: 64px;
+  font-weight: 700;
+  color: var(--accent);
+  letter-spacing: 8px;
+  margin-bottom: 8px;
+}
+.land-sub { color: var(--muted); font-size: 14px; margin-bottom: 48px; font-family: var(--mono); letter-spacing: 2px; }
+.land-cards { display: flex; gap: 16px; }
+.land-card {
+  width: 200px;
+  padding: 28px 20px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+.land-card:hover {
+  border-color: var(--accent);
+  transform: translateY(-6px);
+  box-shadow: 0 20px 40px rgba(0,229,160,0.15);
+}
+.land-card .icon { font-size: 40px; margin-bottom: 12px; }
+.land-card h3 { font-family: var(--mono); font-size: 11px; letter-spacing: 1px; color: var(--text); }
+.land-card p { font-size: 11px; color: var(--muted); margin-top: 6px; line-height: 1.5; }
+
+/* scroll */
+.ip-content-scroll { overflow-y: auto; }
+
+/* daily life badges */
+.life-badge {
+  display: inline-block;
+  background: rgba(108,99,255,0.15);
+  border: 1px solid rgba(108,99,255,0.3);
+  color: #a89cff;
+  font-size: 11px;
+  padding: 3px 10px;
+  border-radius: 20px;
+  margin: 3px;
+}
+</style>
+</head>
+<body>
+
+<!-- LANDING -->
+<div id="landing">
+  <div class="land-title">OMNI-ATOM</div>
+  <div class="land-sub" id="land-sub">PLATFORM EDUKASI SAINS INTERAKTIF</div>
+  <div class="land-cards">
+    <div class="land-card" onclick="startApp()">
+      <div class="icon">⚛️</div>
+      <h3 id="land-btn">MULAI BELAJAR</h3>
+      <p id="land-desc">Eksplorasi tabel periodik lengkap dengan AI</p>
+    </div>
+  </div>
+  <div style="position:absolute;top:20px;right:20px;display:flex;gap:8px;align-items:center;">
+    <span style="font-size:12px;color:var(--muted);font-family:var(--mono);">BAHASA:</span>
+    <select id="lang-landing" style="background:var(--surface);border:1px solid var(--border);color:var(--text);padding:6px 10px;border-radius:8px;font-size:12px;font-family:var(--mono);cursor:pointer;outline:none;">
+      <option value="id">ID</option>
+      <option value="en">EN</option>
+    </select>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app">
+
+  <!-- HEADER -->
+  <div id="header">
+    <div class="logo">OMNI-ATOM</div>
+    <div class="header-divider"></div>
+    <div class="search-wrap">
+      <span class="si">🔍</span>
+      <input id="header-search" type="text" placeholder="Cari unsur...">
+    </div>
+    <div class="header-tabs">
+      <button class="htab active" id="htab-kimia" onclick="switchTab('kimia')">KIMIA</button>
+      <button class="htab" id="htab-fisika" onclick="switchTab('fisika')">FISIKA</button>
+      <button class="htab" id="htab-sejarah" onclick="switchTab('sejarah')">SEJARAH</button>
+      <button class="htab" id="htab-guna" onclick="switchTab('guna')">APLIKASI</button>
+      <button class="htab" id="htab-kehidupan" onclick="switchTab('kehidupan')">KEHIDUPAN</button>
+    </div>
+    <button class="htab" onclick="openSettings()" title="Pengaturan AI" style="margin-left:auto;">⚙️</button>
+    <select id="lang-select">
+      <option value="id">ID 🇮🇩</option>
+      <option value="en">EN 🇬🇧</option>
+    </select>
+  </div>
+
+  <!-- SIDEBAR -->
+  <div id="sidebar">
+    <div class="stool active" onclick="sideAction('home')" title="Beranda">🏠<small>HOME</small></div>
+    <div class="stool" onclick="sideAction('bond')" title="Ikatan">⚗️<small>BOND</small></div>
+    <div class="stool" onclick="sideAction('quiz')" title="Quiz">🎯<small>QUIZ</small></div>
+    <div class="stool" onclick="sideAction('legend')" title="Legenda">🎨<small>INFO</small></div>
+  </div>
+
+  <!-- MAIN -->
+  <div id="main">
+    <!-- INFO PANEL -->
+    <div id="info-panel">
+      <div class="ip-header">
+        <div class="el-symbol" id="ip-sym">H</div>
+        <div class="el-name" id="ip-name">Hidrogen</div>
+        <div class="el-cat cc6" id="ip-cat" style="background:rgba(255,238,88,0.15);color:#ffee58;border:1px solid rgba(255,238,88,0.3);">Non-Logam</div>
+      </div>
+      <div class="ip-tabs">
+        <button class="iptab active" onclick="switchIpTab('data')">DATA</button>
+        <button class="iptab" onclick="switchIpTab('kimia')">KIMIA</button>
+        <button class="iptab" onclick="switchIpTab('fisika')">FISIKA</button>
+        <button class="iptab" onclick="switchIpTab('ai')">AI ✨</button>
+      </div>
+      <div id="ip-content"></div>
+    </div>
+
+    <!-- 3D VIZ -->
+    <div id="viz">
+      <div id="hud">
+        <div class="hud-sym" id="hud-sym">H</div>
+        <div class="hud-z" id="hud-z">Z = 1</div>
+      </div>
+      <div id="container-3d"></div>
+      <div id="viz-controls">
+        <button class="vctrl active" onclick="setViz('atom')">ORBITAL</button>
+        <button class="vctrl" onclick="setViz('band')">ENERGI</button>
+        <button class="vctrl" onclick="setViz('nuc')">INTI</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- RIGHT PANEL -->
+  <div id="right-panel">
+    <div id="right-panel-inner">
+
+      <!-- QUICK STATS -->
+      <div class="rp-section">
+        <div class="rp-title" id="rp-identity">IDENTITAS</div>
+        <div class="stat-grid">
+          <div class="stat-card"><div class="stat-val" id="st-z">1</div><div class="stat-lbl">Nomor Atom</div></div>
+          <div class="stat-card"><div class="stat-val" id="st-mass">1.008</div><div class="stat-lbl">Massa Atom</div></div>
+          <div class="stat-card"><div class="stat-val" id="st-val">1</div><div class="stat-lbl">Valensi</div></div>
+          <div class="stat-card"><div class="stat-val" id="st-chi">2.20</div><div class="stat-lbl">Elektroneg.</div></div>
+        </div>
+      </div>
+
+      <!-- TOOL: CEK SENYAWA -->
+      <div class="rp-section">
+        <div class="rp-title" id="rp-check-title">🔬 CEK UNSUR SENYAWA</div>
+        <div class="tool-card">
+          <h4 id="tc1-h">NAMA BENDA / SENYAWA</h4>
+          <input class="tool-input" id="compound-input" type="text" placeholder="contoh: garam, air, cuka..." maxlength="60">
+          <button class="tool-btn" onclick="checkCompound()" id="tc1-btn">ANALISIS →</button>
+          <div class="tool-result" id="compound-result"></div>
+        </div>
+      </div>
+
+      <div class="rp-section">
+        <div class="rp-title">📘 MATERI OTOMATIS</div>
+        <div class="tool-card">
+          <h4>Cari materi atom/senyawa</h4>
+          <input class="tool-input" id="material-input" type="text" placeholder="contoh: CO2, H2O, garam, oksigen..." maxlength="60">
+          <button class="tool-btn" onclick="fetchMaterial()" id="material-btn">CARI MATERI →</button>
+          <div class="tool-result" id="material-result" style="display:block;max-height:420px;overflow-y:auto;"></div>
+        </div>
+      </div>
+
+      <div class="rp-section">
+        <div class="rp-title">🤖 TANYA AI</div>
+        <div class="tool-card">
+          <h4>Pertanyaan bebas</h4>
+          <input class="tool-input" id="ask-input" type="text" placeholder="Contoh: Apa itu konfigurasi elektron?" maxlength="120">
+          <button class="tool-btn" onclick="askAi()" id="ask-btn">TANYAKAN →</button>
+          <div class="tool-result" id="ask-result"></div>
+        </div>
+      </div>
+
+      <!-- TOOL: PENGGABUNGAN SENYAWA -->
+      <div class="rp-section">
+        <div class="rp-title" id="rp-combine-title">🧪 PENGGABUNGAN SENYAWA</div>
+        <div class="tool-card">
+          <h4 id="tc2-h">RUMUS / NAMA SENYAWA</h4>
+          <input class="tool-input" id="formula-input" type="text" placeholder="contoh: H2O, CO2, NaCl..." maxlength="30">
+          <button class="tool-btn" onclick="explainFormula()" id="tc2-btn">JELASKAN →</button>
+          <div class="tool-result" id="formula-result"></div>
+        </div>
+      </div>
+
+      <!-- TOOL: KEHIDUPAN SEHARI-HARI -->
+      <div class="rp-section">
+        <div class="rp-title" id="rp-daily-title">🌍 KEHIDUPAN SEHARI-HARI</div>
+        <div class="tool-card">
+          <h4 id="tc3-h">UNSUR YANG DIPILIH</h4>
+          <div id="daily-content" style="font-size:12px;color:var(--muted);line-height:1.6;">
+            Pilih unsur dari tabel untuk melihat hubungannya dengan kehidupan sehari-hari.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PERIODIC TABLE -->
+  <div id="table-panel">
+    <div id="grid"></div>
+  </div>
+
+</div>
+
+<!-- MODAL: BONDING -->
+<div class="modal-overlay" id="modal-bond">
+  <div class="modal-box">
+    <div class="modal-head">
+      <span id="m-bond-title">⚗️ IKATAN ATOM</span>
+      <span class="modal-close" onclick="closeModal('bond')">×</span>
+    </div>
+    <div class="modal-body">
+      <p style="font-size:12px;color:var(--muted);margin-bottom:16px;font-family:var(--mono);" id="m-bond-sub">Gabungkan dua unsur untuk melihat jenis ikatan</p>
+      <div style="display:flex;gap:10px;margin-bottom:14px;">
+        <input class="tool-input" id="bond-a" type="text" placeholder="Atom 1 (simbol/nama)" style="flex:1;">
+        <span style="color:var(--muted);line-height:38px;font-size:18px;font-weight:700;">+</span>
+        <input class="tool-input" id="bond-b" type="text" placeholder="Atom 2 (simbol/nama)" style="flex:1;">
+      </div>
+      <button class="tool-btn" onclick="doBond()" id="m-bond-btn">GABUNGKAN</button>
+      <div class="tool-result" id="bond-result" style="margin-top:12px;"></div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: QUIZ -->
+<div class="modal-overlay" id="modal-quiz">
+  <div class="modal-box">
+    <div class="modal-head">
+      <span>🎯 MINI QUIZ</span>
+      <span class="modal-close" onclick="closeModal('quiz')">×</span>
+    </div>
+    <div class="modal-body" id="quiz-body">
+      <p style="font-size:13px;color:var(--muted);margin-bottom:16px;">Uji pengetahuanmu tentang unsur kimia!</p>
+      <div id="quiz-content"></div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: LEGEND -->
+<div class="modal-overlay" id="modal-legend">
+  <div class="modal-box">
+    <div class="modal-head">
+      <span id="m-legend-title">🎨 KELOMPOK UNSUR</span>
+      <span class="modal-close" onclick="closeModal('legend')">×</span>
+    </div>
+    <div class="modal-body" id="legend-body"></div>
+  </div>
+</div>
+
+<!-- MODAL: SETTINGS -->
+<div class="modal-overlay" id="modal-settings">
+  <div class="modal-box">
+    <div class="modal-head">
+      <span>⚙️ PENGATURAN</span>
+      <span class="modal-close" onclick="closeModal('settings')">×</span>
+    </div>
+    <div class="modal-body" style="font-size:12px;">
+      <p style="color:var(--accent);font-weight:bold;margin-bottom:16px;">🟢 AI DEMO MODE AKTIF</p>
+      <p style="color:var(--muted);line-height:1.6;margin-bottom:16px;">
+        Aplikasi menggunakan database pembelajaran lokal yang komprehensif. Semua fitur AI berjalan tanpa API key atau koneksi internet.
+      </p>
+      
+      <div style="background:rgba(0,229,160,0.1);border:1px solid rgba(0,229,160,0.3);border-radius:8px;padding:12px;margin-bottom:16px;">
+        <p style="font-weight:bold;color:var(--accent);margin-bottom:8px;">✓ Fitur Tersedia:</p>
+        <ul style="list-style:none;padding:0;margin:0;color:#aaa;font-size:11px;">
+          <li>✅ MATERI OTOMATIS: CO₂, H₂O, NaCl, dan 20+ unsur/senyawa lainnya</li>
+          <li>✅ TANYA AI: Pertanyaan tentang atom, ikatan, reaksi, tren periodik</li>
+          <li>✅ IKATAN ATOM: Analisis bonding ionik, kovalen, hidrogen, logam</li>
+          <li>✅ CEK SENYAWA: Identifikasi unsur penyusun</li>
+          <li>✅ AI ✨: Insight untuk setiap elemen di periodic table</li>
+        </ul>
+      </div>
+      
+      <p style="color:#888;font-size:11px;border-top:1px solid var(--border);padding-top:12px;">
+        Database pembelajaran mencakup 40+ topik: unsur (H, C, N, O, Fe, Cu), senyawa (CO₂, H₂O, NaCl), ikatan, struktur atom, tren periodik, reaksi kimia, dan kuantitas.
+      </p>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+/* ═══════════════════════════════════════════════
+   DATABASE UNSUR LENGKAP (1–118)
+   Bidang: symbol, name_id, name_en, mass, cat,
+           year, phase, ionization, melt, chi, type,
+           bandGap, daily_id, daily_en, group, period
+═══════════════════════════════════════════════ */
+const ELEMENTS = [null,
+{sym:"H",id:"Hidrogen",en:"Hydrogen",mass:1.008,cat:6,year:1766,phase:"Gas",ion:13.6,melt:13.99,chi:2.20,type:"Ins",bg:null,grp:1,per:1,
+daily_id:"💧 Air minum (H₂O), bahan bakar roket, sel bahan bakar hidrogen, pupuk amonia",
+daily_en:"💧 Drinking water (H₂O), rocket fuel, hydrogen fuel cells, ammonia fertilizers"},
+
+{sym:"He",id:"Helium",en:"Helium",mass:4.002,cat:8,year:1868,phase:"Gas",ion:24.6,melt:null,chi:null,type:"Ins",bg:null,grp:18,per:1,
+daily_id:"🎈 Balon pesta, MRI cryocooling, blimp/kapal udara, tangki penyelam",
+daily_en:"🎈 Party balloons, MRI cryocooling, blimps, diver tanks"},
+
+{sym:"Li",id:"Litium",en:"Lithium",mass:6.94,cat:1,year:1817,phase:"Solid",ion:5.39,melt:453.65,chi:0.98,type:"Con",bg:0,grp:1,per:2,
+daily_id:"🔋 Baterai ponsel & laptop, obat bipolar, paduan logam ringan pesawat",
+daily_en:"🔋 Phone & laptop batteries, bipolar medication, lightweight aircraft alloys"},
+
+{sym:"Be",id:"Berilium",en:"Beryllium",mass:9.012,cat:2,year:1798,phase:"Solid",ion:9.32,melt:1560,chi:1.57,type:"Con",bg:0,grp:2,per:2,
+daily_id:"✈️ Komponen pesawat terbang, jendela sinar-X, speaker audiofil berkualitas",
+daily_en:"✈️ Aircraft components, X-ray windows, high-quality audiophile speakers"},
+
+{sym:"B",id:"Boron",en:"Boron",mass:10.81,cat:5,year:1808,phase:"Solid",ion:8.30,melt:2349,chi:2.04,type:"SC",bg:1.5,grp:13,per:2,
+daily_id:"🔬 Kaca pyrex/borosilikat, bahan nuklir, pupuk boraks, detergen laundry",
+daily_en:"🔬 Pyrex/borosilicate glass, nuclear material, borax fertilizer, laundry detergent"},
+
+{sym:"C",id:"Karbon",en:"Carbon",mass:12.011,cat:6,year:null,phase:"Solid",ion:11.26,melt:3823,chi:2.55,type:"Ins",bg:5.5,grp:14,per:2,
+daily_id:"💎 Berlian perhiasan, pensil grafit, arang BBQ, tubuh makhluk hidup, plastik",
+daily_en:"💎 Diamond jewelry, graphite pencils, BBQ charcoal, living organisms, plastics"},
+
+{sym:"N",id:"Nitrogen",en:"Nitrogen",mass:14.007,cat:6,year:1772,phase:"Gas",ion:14.53,melt:63.15,chi:3.04,type:"Ins",bg:null,grp:15,per:2,
+daily_id:"🌾 78% udara, pupuk pertanian, nitrogen cair di laboratorium, kemasan makanan",
+daily_en:"🌾 78% of air, agricultural fertilizers, liquid nitrogen in labs, food packaging"},
+
+{sym:"O",id:"Oksigen",en:"Oxygen",mass:15.999,cat:6,year:1774,phase:"Gas",ion:13.62,melt:54.36,chi:3.44,type:"Ins",bg:null,grp:16,per:2,
+daily_id:"🫁 Pernapasan manusia, tabung oksigen rumah sakit, pembakaran, air (H₂O), ozon",
+daily_en:"🫁 Human respiration, hospital oxygen tanks, combustion, water (H₂O), ozone layer"},
+
+{sym:"F",id:"Fluorin",en:"Fluorine",mass:18.998,cat:7,year:1886,phase:"Gas",ion:17.42,melt:53.48,chi:3.98,type:"Ins",bg:null,grp:17,per:2,
+daily_id:"🦷 Pasta gigi berfluoride, lapisan antilengket teflon, refrigeran AC (Freon)",
+daily_en:"🦷 Fluoride toothpaste, non-stick Teflon coating, AC refrigerant (Freon)"},
+
+{sym:"Ne",id:"Neon",en:"Neon",mass:20.180,cat:8,year:1898,phase:"Gas",ion:21.56,melt:24.56,chi:null,type:"Ins",bg:null,grp:18,per:2,
+daily_id:"💡 Lampu neon jingga-merah, laser, indikator tegangan tinggi",
+daily_en:"💡 Orange-red neon signs, lasers, high-voltage indicators"},
+
+{sym:"Na",id:"Natrium",en:"Sodium",mass:22.990,cat:1,year:1807,phase:"Solid",ion:5.14,melt:370.87,chi:0.93,type:"Con",bg:0,grp:1,per:3,
+daily_id:"🧂 Garam dapur (NaCl), soda kue (NaHCO₃), lampu jalan kuning, detergen",
+daily_en:"🧂 Table salt (NaCl), baking soda (NaHCO₃), yellow streetlamps, detergent"},
+
+{sym:"Mg",id:"Magnesium",en:"Magnesium",mass:24.305,cat:2,year:1755,phase:"Solid",ion:7.65,melt:923,chi:1.31,type:"Con",bg:0,grp:2,per:3,
+daily_id:"🌿 Klorofil tanaman (pusat Mg), suplemen mineral, paduan velg mobil ringan",
+daily_en:"🌿 Plant chlorophyll (Mg center), mineral supplements, lightweight alloy car wheels"},
+
+{sym:"Al",id:"Aluminium",en:"Aluminum",mass:26.982,cat:4,year:1825,phase:"Solid",ion:5.99,melt:933.47,chi:1.61,type:"Con",bg:0,grp:13,per:3,
+daily_id:"🥤 Kaleng minuman, foil dapur, bodi pesawat, frame sepeda, panci masak",
+daily_en:"🥤 Beverage cans, kitchen foil, aircraft bodies, bicycle frames, cooking pans"},
+
+{sym:"Si",id:"Silikon",en:"Silicon",mass:28.085,cat:5,year:1824,phase:"Solid",ion:8.15,melt:1687,chi:1.90,type:"SC",bg:1.12,grp:14,per:3,
+daily_id:"💻 Chip ponsel & komputer, panel surya, kaca, pasir pantai, silikon dapur",
+daily_en:"💻 Phone & computer chips, solar panels, glass, beach sand, kitchen silicone"},
+
+{sym:"P",id:"Fosfor",en:"Phosphorus",mass:30.974,cat:6,year:1669,phase:"Solid",ion:10.49,melt:317.3,chi:2.19,type:"Ins",bg:2.0,grp:15,per:3,
+daily_id:"🌱 Pupuk NPK, korek api, DNA & ATP dalam sel, detergen (dahulu), bahan piroteknik",
+daily_en:"🌱 NPK fertilizers, matches, DNA & ATP in cells, (former) detergents, pyrotechnics"},
+
+{sym:"S",id:"Belerang",en:"Sulfur",mass:32.06,cat:6,year:null,phase:"Solid",ion:10.36,melt:388.36,chi:2.58,type:"Ins",bg:2.6,grp:16,per:3,
+daily_id:"🌋 Pupuk, asam sulfat industri, vulkanisasi karet ban, obat jerawat, kawah gunung api",
+daily_en:"🌋 Fertilizers, industrial sulfuric acid, tire rubber vulcanization, acne medicine, volcano craters"},
+
+{sym:"Cl",id:"Klorin",en:"Chlorine",mass:35.45,cat:7,year:1774,phase:"Gas",ion:12.97,melt:171.6,chi:3.16,type:"Ins",bg:3.0,grp:17,per:3,
+daily_id:"🏊 Desinfektan kolam renang, pemutih (NaOCl), PVC pipa air, garam dapur (NaCl)",
+daily_en:"🏊 Pool disinfectant, bleach (NaOCl), PVC water pipes, table salt (NaCl)"},
+
+{sym:"Ar",id:"Argon",en:"Argon",mass:39.948,cat:8,year:1894,phase:"Gas",ion:15.76,melt:83.81,chi:null,type:"Ins",bg:10.0,grp:18,per:3,
+daily_id:"🔧 Gas pengisi lampu pijar, pengelasan TIG (lindungi lelehan), jendela double-glazed",
+daily_en:"🔧 Incandescent bulb fill gas, TIG welding shield, double-glazed window insulation"},
+
+{sym:"K",id:"Kalium",en:"Potassium",mass:39.098,cat:1,year:1807,phase:"Solid",ion:4.34,melt:336.53,chi:0.82,type:"Con",bg:0,grp:1,per:4,
+daily_id:"🍌 Pisang, fungsi otot & jantung, pupuk KCl, suplemen elektrolit atlet",
+daily_en:"🍌 Bananas, muscle & heart function, KCl fertilizer, athlete electrolyte supplements"},
+
+{sym:"Ca",id:"Kalsium",en:"Calcium",mass:40.078,cat:2,year:1808,phase:"Solid",ion:6.11,melt:1115,chi:1.00,type:"Con",bg:0,grp:2,per:4,
+daily_id:"🦴 Tulang & gigi manusia, semen & beton bangunan, kapur tulis, susu & keju",
+daily_en:"🦴 Human bones & teeth, cement & concrete, chalk, milk & cheese"},
+
+{sym:"Sc",id:"Skandium",en:"Scandium",mass:44.956,cat:3,year:1879,phase:"Solid",ion:6.56,melt:1814,chi:1.36,type:"Con",bg:0,grp:3,per:4,
+daily_id:"🚴 Rangka sepeda balap premium, stik baseball, lampu metal halida stadion",
+daily_en:"🚴 Premium racing bike frames, baseball bats, stadium metal halide lamps"},
+
+{sym:"Ti",id:"Titanium",en:"Titanium",mass:47.867,cat:3,year:1791,phase:"Solid",ion:6.82,melt:1941,chi:1.54,type:"Con",bg:0,grp:4,per:4,
+daily_id:"🦷 Implan gigi & tulang buatan, bodi pesawat tempur, jam tangan, pigmen cat putih (TiO₂)",
+daily_en:"🦷 Dental & bone implants, fighter aircraft bodies, watches, white paint pigment (TiO₂)"},
+
+{sym:"V",id:"Vanadium",en:"Vanadium",mass:50.942,cat:3,year:1801,phase:"Solid",ion:6.74,melt:2183,chi:1.63,type:"Con",bg:0,grp:5,per:4,
+daily_id:"🔩 Baja aloi kekuatan tinggi, kunci pas & alat bengkel, baterai aliran vanadium",
+daily_en:"🔩 High-strength steel alloys, wrenches & workshop tools, vanadium flow batteries"},
+
+{sym:"Cr",id:"Kromium",en:"Chromium",mass:51.996,cat:3,year:1797,phase:"Solid",ion:6.77,melt:2180,chi:1.66,type:"Con",bg:0,grp:6,per:4,
+daily_id:"✨ Baja tahan karat (stainless steel), chrome bumper mobil, pigmen hijau cat, permata rubi",
+daily_en:"✨ Stainless steel, chrome car bumpers, green paint pigment, ruby gemstones"},
+
+{sym:"Mn",id:"Mangan",en:"Manganese",mass:54.938,cat:3,year:1774,phase:"Solid",ion:7.43,melt:1519,chi:1.55,type:"Con",bg:0,grp:7,per:4,
+daily_id:"🔋 Baterai alkaline (MnO₂), baja kuat untuk rel kereta, pupuk mikro tanaman",
+daily_en:"🔋 Alkaline batteries (MnO₂), strong steel for railway tracks, plant micronutrient"},
+
+{sym:"Fe",id:"Besi",en:"Iron",mass:55.845,cat:3,year:null,phase:"Solid",ion:7.90,melt:1811,chi:1.83,type:"Con",bg:0,grp:8,per:4,
+daily_id:"🏗️ Pagar, kendaraan, konstruksi bangunan, kompor, hemoglobin darah (heme iron)",
+daily_en:"🏗️ Fences, vehicles, building construction, stoves, blood hemoglobin (heme iron)"},
+
+{sym:"Co",id:"Kobalt",en:"Cobalt",mass:58.933,cat:3,year:1735,phase:"Solid",ion:7.88,melt:1768,chi:1.88,type:"Con",bg:0,grp:9,per:4,
+daily_id:"🔵 Pigmen biru keramik & kaca, baterai EV (NMC), magnet permanen, vitamin B12",
+daily_en:"🔵 Blue ceramic & glass pigment, EV batteries (NMC), permanent magnets, vitamin B12"},
+
+{sym:"Ni",id:"Nikel",en:"Nickel",mass:58.693,cat:3,year:1751,phase:"Solid",ion:7.64,melt:1728,chi:1.91,type:"Con",bg:0,grp:10,per:4,
+daily_id:"🪙 Koin logam, stainless steel peralatan masak, baterai NiMH, magnet, pelapis logam",
+daily_en:"🪙 Metal coins, stainless steel cookware, NiMH batteries, magnets, metal plating"},
+
+{sym:"Cu",id:"Tembaga",en:"Copper",mass:63.546,cat:3,year:-9000,phase:"Solid",ion:7.73,melt:1357.77,chi:1.90,type:"Con",bg:0,grp:11,per:4,
+daily_id:"🔌 Kabel listrik, pipa air, uang koin, panci, patung hijau (teroksidasi), kuningan",
+daily_en:"🔌 Electric wires, water pipes, coins, pots, green statues (oxidized), brass"},
+
+{sym:"Zn",id:"Seng",en:"Zinc",mass:65.38,cat:3,year:1746,phase:"Solid",ion:9.39,melt:692.68,chi:1.65,type:"Con",bg:0,grp:12,per:4,
+daily_id:"🏠 Atap seng bangunan, galvanis pagar besi, tabir surya (ZnO), baterai, suplemen imun",
+daily_en:"🏠 Sheet metal roofing, iron fence galvanizing, sunscreen (ZnO), batteries, immune supplement"},
+
+{sym:"Ga",id:"Galium",en:"Gallium",mass:69.723,cat:4,year:1875,phase:"Solid",ion:5.99,melt:302.91,chi:1.81,type:"SC",bg:1.42,grp:13,per:4,
+daily_id:"💡 LED biru-putih, laser diode, semikonduktor GaN (5G), termometer gallium",
+daily_en:"💡 Blue-white LEDs, diode lasers, GaN semiconductors (5G), gallium thermometers"},
+
+{sym:"Ge",id:"Germanium",en:"Germanium",mass:72.630,cat:5,year:1886,phase:"Solid",ion:7.90,melt:1211.4,chi:2.01,type:"SC",bg:0.66,grp:14,per:4,
+daily_id:"📡 Serat optik, detektor inframerah kamera termal, transistor awal komputer",
+daily_en:"📡 Optical fiber, infrared detectors in thermal cameras, early computer transistors"},
+
+{sym:"As",id:"Arsen",en:"Arsenic",mass:74.922,cat:5,year:1250,phase:"Solid",ion:9.81,melt:1090,chi:2.18,type:"Con",bg:0,grp:15,per:4,
+daily_id:"⚠️ Pestisida (dahulu), semikonduktor GaAs, pengawet kayu (CCA), racun klasik sejarah",
+daily_en:"⚠️ (Former) pesticides, GaAs semiconductors, wood preservative (CCA), historical poison"},
+
+{sym:"Se",id:"Selenium",en:"Selenium",mass:78.971,cat:6,year:1817,phase:"Solid",ion:9.75,melt:494,chi:2.55,type:"SC",bg:1.74,grp:16,per:4,
+daily_id:"☀️ Panel surya film tipis (CdTe), drumphotocopier, suplemen antioksidan, warna merah kaca",
+daily_en:"☀️ Thin-film solar panels (CdTe), photocopier drums, antioxidant supplement, red glass color"},
+
+{sym:"Br",id:"Bromin",en:"Bromine",mass:79.904,cat:7,year:1826,phase:"Liquid",ion:11.81,melt:265.8,chi:2.96,type:"Ins",bg:null,grp:17,per:4,
+daily_id:"🔥 Penghambat api (flame retardant) furnitur & elektronik, obat bius, kolam renang",
+daily_en:"🔥 Furniture & electronics flame retardants, anesthetics, swimming pool treatment"},
+
+{sym:"Kr",id:"Kripton",en:"Krypton",mass:83.798,cat:8,year:1898,phase:"Gas",ion:14.00,melt:115.79,chi:null,type:"Ins",bg:10.0,grp:18,per:4,
+daily_id:"🔦 Lampu flash fotografer pro, laser krypton, lampu hemat energi tertentu",
+daily_en:"🔦 Professional photographer flashes, krypton lasers, certain energy-saving lamps"},
+
+{sym:"Rb",id:"Rubidium",en:"Rubidium",mass:85.468,cat:1,year:1861,phase:"Solid",ion:4.18,melt:312.46,chi:0.82,type:"Con",bg:0,grp:1,per:5,
+daily_id:"⏰ Jam atom rubidium (dasar GPS & 5G), sel fotoelektrik, riset fisika kuantum",
+daily_en:"⏰ Rubidium atomic clocks (GPS & 5G basis), photoelectric cells, quantum physics research"},
+
+{sym:"Sr",id:"Stronsium",en:"Strontium",mass:87.62,cat:2,year:1790,phase:"Solid",ion:5.69,melt:1050,chi:0.95,type:"Con",bg:0,grp:2,per:5,
+daily_id:"🎆 Kembang api merah terang, magnet ferrit, pasta gigi sensitif (Sr acetat)",
+daily_en:"🎆 Bright red fireworks, ferrite magnets, sensitive teeth toothpaste (Sr acetate)"},
+
+{sym:"Y",id:"Itrium",en:"Yttrium",mass:88.906,cat:3,year:1794,phase:"Solid",ion:6.22,melt:1799,chi:1.22,type:"Con",bg:0,grp:3,per:5,
+daily_id:"📺 Fosfor merah TV/monitor CRT, superkonduktor YBCO, laser medis Nd:YAG",
+daily_en:"📺 Red phosphors in CRT TVs/monitors, YBCO superconductors, Nd:YAG medical lasers"},
+
+{sym:"Zr",id:"Zirkonium",en:"Zirconium",mass:91.224,cat:3,year:1789,phase:"Solid",ion:6.63,melt:2128,chi:1.33,type:"Con",bg:0,grp:4,per:5,
+daily_id:"☢️ Selongsong bahan bakar reaktor nuklir, berlian sintetis (kubik zirkonia), keramik gigi",
+daily_en:"☢️ Nuclear fuel rod cladding, synthetic diamonds (cubic zirconia), dental ceramics"},
+
+{sym:"Nb",id:"Niobium",en:"Niobium",mass:92.906,cat:3,year:1801,phase:"Solid",ion:6.76,melt:2750,chi:1.60,type:"Con",bg:0,grp:5,per:5,
+daily_id:"🚄 MRI (kabel superkonduktor NbTi), baja HSLA kereta cepat, akselerator partikel CERN",
+daily_en:"🚄 MRI (NbTi superconducting wire), HSLA steel for high-speed trains, CERN accelerator"},
+
+{sym:"Mo",id:"Molibdenum",en:"Molybdenum",mass:95.95,cat:3,year:1778,phase:"Solid",ion:7.09,melt:2896,chi:2.16,type:"Con",bg:0,grp:6,per:5,
+daily_id:"🔩 Baja aloi kekuatan tinggi (poros mesin), katalis kilang minyak, pelumas padat MoS₂",
+daily_en:"🔩 High-strength alloy steel (engine shafts), oil refinery catalyst, MoS₂ solid lubricant"},
+
+{sym:"Tc",id:"Teknesium",en:"Technetium",mass:98.0,cat:3,year:1937,phase:"Solid",ion:7.28,melt:2430,chi:1.90,type:"Con",bg:0,grp:7,per:5,
+daily_id:"🏥 Radioisotop Tc-99m untuk scan kedokteran nuklir (SPECT), penelitian nuklir",
+daily_en:"🏥 Tc-99m radioisotope for nuclear medicine SPECT scans, nuclear research"},
+
+{sym:"Ru",id:"Rutenium",en:"Ruthenium",mass:101.07,cat:3,year:1844,phase:"Solid",ion:7.36,melt:2607,chi:2.20,type:"Con",bg:0,grp:8,per:5,
+daily_id:"💿 Lapisan hard disk (CIP recording), katalis industri kimia, perhiasan mewah",
+daily_en:"💿 Hard disk coating (CIP recording), chemical industry catalyst, luxury jewelry"},
+
+{sym:"Rh",id:"Rodium",en:"Rhodium",mass:102.905,cat:3,year:1803,phase:"Solid",ion:7.46,melt:2237,chi:2.28,type:"Con",bg:0,grp:9,per:5,
+daily_id:"🚗 Konverter katalitik mobil (mengurangi emisi), perhiasan mewah, elektroda",
+daily_en:"🚗 Automotive catalytic converters (reduce emissions), luxury jewelry, electrodes"},
+
+{sym:"Pd",id:"Paladium",en:"Palladium",mass:106.42,cat:3,year:1803,phase:"Solid",ion:8.34,melt:1828,chi:2.20,type:"Con",bg:0,grp:10,per:5,
+daily_id:"🚘 Konverter katalitik, emas putih perhiasan, elektroda kapasitor MLCC elektronik",
+daily_en:"🚘 Catalytic converters, white gold jewelry, MLCC electronics capacitor electrodes"},
+
+{sym:"Ag",id:"Perak",en:"Silver",mass:107.868,cat:3,year:-3000,phase:"Solid",ion:7.58,melt:1234.93,chi:1.93,type:"Con",bg:0,grp:11,per:5,
+daily_id:"💍 Perhiasan, cermin kaca, peralatan makan mewah, antibakteri, kontak listrik",
+daily_en:"💍 Jewelry, glass mirrors, silverware, antibacterial agent, electrical contacts"},
+
+{sym:"Cd",id:"Kadmium",en:"Cadmium",mass:112.414,cat:3,year:1817,phase:"Solid",ion:8.99,melt:594.22,chi:1.69,type:"Con",bg:0,grp:12,per:5,
+daily_id:"⚠️ Baterai Ni-Cd (kamera & alat), pigmen kuning-merah cat, pelapis anti-korosi",
+daily_en:"⚠️ Ni-Cd batteries (cameras & tools), yellow-red paint pigments, anti-corrosion coating"},
+
+{sym:"In",id:"Indium",en:"Indium",mass:114.818,cat:4,year:1863,phase:"Solid",ion:5.79,melt:429.75,chi:1.78,type:"Con",bg:0,grp:13,per:5,
+daily_id:"📱 Layar sentuh ITO (ponsel & tablet), panel LCD, semikonduktor LED inframerah",
+daily_en:"📱 ITO touchscreens (phones & tablets), LCD panels, infrared LED semiconductors"},
+
+{sym:"Sn",id:"Timah",en:"Tin",mass:118.710,cat:4,year:-3000,phase:"Solid",ion:7.34,melt:505.08,chi:1.96,type:"Con",bg:0,grp:14,per:5,
+daily_id:"🥫 Kaleng makanan (tin-plated), solder PCB elektronik, perunggu (Sn+Cu), timah foil",
+daily_en:"🥫 Food cans (tin-plated), PCB electronics solder, bronze (Sn+Cu), tin foil"},
+
+{sym:"Sb",id:"Antimon",en:"Antimony",mass:121.760,cat:5,year:1760,phase:"Solid",ion:8.64,melt:903.78,chi:2.05,type:"SC",bg:0.18,grp:15,per:5,
+daily_id:"🔥 Penghambat api plastik & tekstil, aki timbal (Pb-Sb alloy), obat parasit",
+daily_en:"🔥 Plastic & textile flame retardant, lead-acid batteries (Pb-Sb alloy), antiparasitic medicine"},
+
+{sym:"Te",id:"Telurium",en:"Tellurium",mass:127.60,cat:5,year:1782,phase:"Solid",ion:9.01,melt:722.66,chi:2.10,type:"SC",bg:0.33,grp:16,per:5,
+daily_id:"☀️ Panel surya CdTe, cakram Blu-ray (GeSbTe), aloi tembaga bebas-timah",
+daily_en:"☀️ CdTe solar panels, Blu-ray discs (GeSbTe), lead-free copper alloys"},
+
+{sym:"I",id:"Iodin",en:"Iodine",mass:126.904,cat:7,year:1811,phase:"Solid",ion:10.45,melt:386.85,chi:2.66,type:"Ins",bg:1.30,grp:17,per:5,
+daily_id:"🩺 Antiseptik luka (betadine), garam beryodium (cegah gondok), kontras MRI, film foto",
+daily_en:"🩺 Wound antiseptic (betadine), iodized salt (prevent goiter), MRI contrast, photo film"},
+
+{sym:"Xe",id:"Xenon",en:"Xenon",mass:131.293,cat:8,year:1898,phase:"Gas",ion:12.13,melt:161.40,chi:null,type:"Ins",bg:9.2,grp:18,per:5,
+daily_id:"💡 Lampu xenon HID mobil mewah, lampu studio foto, propulsi ion satelit, anastesi",
+daily_en:"💡 Luxury car HID xenon lamps, photo studio lights, satellite ion propulsion, anesthesia"},
+
+{sym:"Cs",id:"Sesium",en:"Cesium",mass:132.905,cat:1,year:1860,phase:"Solid",ion:3.89,melt:301.59,chi:0.79,type:"Con",bg:0,grp:1,per:6,
+daily_id:"⏱️ Jam atom sesium (standar SI detik, dasar GPS), detektor radiasi, sel photoelectric",
+daily_en:"⏱️ Cesium atomic clocks (SI second standard, GPS basis), radiation detectors, photoelectric cells"},
+
+{sym:"Ba",id:"Barium",en:"Barium",mass:137.327,cat:2,year:1774,phase:"Solid",ion:5.21,melt:1000,chi:0.89,type:"Con",bg:0,grp:2,per:6,
+daily_id:"🏥 Kontras sinar-X saluran pencernaan (BaSO₄), kembang api hijau, magnet ferrit BaFe",
+daily_en:"🏥 GI tract X-ray contrast (BaSO₄), green fireworks, BaFe ferrite magnets"},
+
+{sym:"La",id:"Lantanum",en:"Lanthanum",mass:138.905,cat:9,year:1839,phase:"Solid",ion:5.58,melt:1193,chi:1.10,type:"Con",bg:0,grp:null,per:6,
+daily_id:"📷 Lensa kamera/teleskop optik tinggi, baterai NiMH (La-Ni), katalis kilang minyak",
+daily_en:"📷 High-quality camera/telescope lenses, NiMH batteries (La-Ni), oil refinery catalyst"},
+
+{sym:"Ce",id:"Serium",en:"Cerium",mass:140.116,cat:9,year:1803,phase:"Solid",ion:5.54,melt:1071,chi:1.12,type:"Con",bg:0,grp:null,per:6,
+daily_id:"🚗 Konverter katalitik otomotif, pemoles kaca & granit, lighter flint (cerium alloy)",
+daily_en:"🚗 Automotive catalytic converters, glass & granite polishing, lighter flint (cerium alloy)"},
+
+{sym:"Pr",id:"Praseodimium",en:"Praseodymium",mass:140.908,cat:9,year:1885,phase:"Solid",ion:5.47,melt:1208,chi:1.13,type:"Con",bg:0,grp:null,per:6,
+daily_id:"🔌 Magnet NdPr motor listrik EV, kacamata las (filter cahaya kuning), fiber laser",
+daily_en:"🔌 NdPr magnets in EV electric motors, welding goggles (yellow light filter), fiber lasers"},
+
+{sym:"Nd",id:"Neodimium",en:"Neodymium",mass:144.242,cat:9,year:1885,phase:"Solid",ion:5.53,melt:1297,chi:1.14,type:"Con",bg:0,grp:null,per:6,
+daily_id:"🧲 Magnet NdFeB terkuat (speaker, headphone, motor EV, turbin angin), laser Nd:YAG",
+daily_en:"🧲 Strongest NdFeB magnets (speakers, headphones, EV motors, wind turbines), Nd:YAG laser"},
+
+{sym:"Pm",id:"Prometium",en:"Promethium",mass:145,cat:9,year:1945,phase:"Solid",ion:5.58,melt:1315,chi:1.13,type:"Con",bg:0,grp:null,per:6,
+daily_id:"☢️ Baterai nuklir satelit/alat pacu jantung (historis), cat radioaktif berpendar (jarang)",
+daily_en:"☢️ Satellite/pacemaker nuclear batteries (historical), radioactive luminous paint (rare)"},
+
+{sym:"Sm",id:"Samarium",en:"Samarium",mass:150.36,cat:9,year:1879,phase:"Solid",ion:5.64,melt:1345,chi:1.17,type:"Con",bg:0,grp:null,per:6,
+daily_id:"🧲 Magnet SmCo (tahan panas tinggi untuk motor pesawat & militer), kontrol reaktor nuklir",
+daily_en:"🧲 SmCo magnets (high-temp for aircraft & military motors), nuclear reactor control"},
+
+{sym:"Eu",id:"Europium",en:"Europium",mass:151.96,cat:9,year:1901,phase:"Solid",ion:5.67,melt:1099,chi:1.20,type:"Con",bg:0,grp:null,per:6,
+daily_id:"🔴 Fosfor merah+biru layar TV CRT & LCD, uang Euro (penanda anti-pemalsuan), LED",
+daily_en:"🔴 Red+blue phosphors in CRT & LCD TVs, Euro banknotes (anti-counterfeiting), LEDs"},
+
+{sym:"Gd",id:"Gadolinium",en:"Gadolinium",mass:157.25,cat:9,year:1880,phase:"Solid",ion:6.15,melt:1585,chi:1.20,type:"Con",bg:0,grp:null,per:6,
+daily_id:"🏥 Agen kontras MRI (Gd-DTPA), pelindung neutron reaktor nuklir, material data optikal",
+daily_en:"🏥 MRI contrast agent (Gd-DTPA), nuclear reactor neutron shield, optical data materials"},
+
+{sym:"Tb",id:"Terbium",en:"Terbium",mass:158.925,cat:9,year:1843,phase:"Solid",ion:5.86,melt:1629,chi:1.10,type:"Con",bg:0,grp:null,per:6,
+daily_id:"🟢 Fosfor hijau layar TV/monitor, lampu hemat energi CFL, aktuator magnetostriksi sonar",
+daily_en:"🟢 Green phosphors in TV/monitor screens, CFL energy-saving lamps, magnetostrictive sonar actuators"},
+
+{sym:"Dy",id:"Disprosium",en:"Dysprosium",mass:162.5,cat:9,year:1886,phase:"Solid",ion:5.94,melt:1680,chi:1.22,type:"Con",bg:0,grp:null,per:6,
+daily_id:"🧲 Magnet NdFeB tahan suhu tinggi (motor EV & angin), batang kontrol reaktor nuklir",
+daily_en:"🧲 High-temp NdFeB magnets (EV & wind motors), nuclear reactor control rods"},
+
+{sym:"Ho",id:"Holmium",en:"Holmium",mass:164.93,cat:9,year:1878,phase:"Solid",ion:6.02,melt:1747,chi:1.23,type:"Con",bg:0,grp:null,per:6,
+daily_id:"🔬 Laser Holmium bedah urologi/ortopedi, konsentrasi medan magnet MRI, scintillator",
+daily_en:"🔬 Holmium laser surgery (urology/orthopedics), MRI magnetic field concentrators, scintillators"},
+
+{sym:"Er",id:"Erbium",en:"Erbium",mass:167.259,cat:9,year:1842,phase:"Solid",ion:6.11,melt:1802,chi:1.24,type:"Con",bg:0,grp:null,per:6,
+daily_id:"📶 Penguat serat optik EDFA (internet dunia), laser Er:YAG dermatologi, kaca merah jambu",
+daily_en:"📶 EDFA optical fiber amplifiers (world internet), Er:YAG dermatology lasers, pink glass"},
+
+{sym:"Tm",id:"Tulium",en:"Thulium",mass:168.934,cat:9,year:1879,phase:"Solid",ion:6.18,melt:1818,chi:1.25,type:"Con",bg:0,grp:null,per:6,
+daily_id:"🩻 Mesin sinar-X portabel (medis/lapangan), laser Tm:YAG 2μm, material laser solid-state",
+daily_en:"🩻 Portable X-ray machines (medical/field), Tm:YAG 2μm lasers, solid-state laser materials"},
+
+{sym:"Yb",id:"Iterbium",en:"Ytterbium",mass:173.045,cat:9,year:1878,phase:"Solid",ion:6.25,melt:1097,chi:1.10,type:"Con",bg:0,grp:null,per:6,
+daily_id:"⏰ Jam atom optik terpresisi (lebih akurat dari Cs), laser fiber Yb, sensor regangan baja",
+daily_en:"⏰ Most precise optical atomic clocks (more accurate than Cs), Yb fiber lasers, steel strain sensors"},
+
+{sym:"Lu",id:"Lutetium",en:"Lutetium",mass:174.967,cat:9,year:1907,phase:"Solid",ion:5.43,melt:1936,chi:1.27,type:"Con",bg:0,grp:null,per:6,
+daily_id:"🏥 Detektor PET scan (scintillator LSO), katalis minyak bumi, terapi kanker Lu-177",
+daily_en:"🏥 PET scan detectors (LSO scintillator), petroleum catalyst, Lu-177 cancer therapy"},
+
+{sym:"Hf",id:"Hafnium",en:"Hafnium",mass:178.49,cat:3,year:1923,phase:"Solid",ion:6.83,melt:2506,chi:1.30,type:"Con",bg:0,grp:4,per:6,
+daily_id:"💻 Gate dielektrik chip Intel/AMD terbaru (HfO₂), batang kontrol reaktor nuklir kapal selam",
+daily_en:"💻 Gate dielectric in latest Intel/AMD chips (HfO₂), submarine nuclear reactor control rods"},
+
+{sym:"Ta",id:"Tantalum",en:"Tantalum",mass:180.948,cat:3,year:1802,phase:"Solid",ion:7.89,melt:3290,chi:1.50,type:"Con",bg:0,grp:5,per:6,
+daily_id:"📱 Kapasitor tantalum ponsel & laptop, implan medis (tahan korosi tubuh), peralatan kimia",
+daily_en:"📱 Tantalum capacitors in phones & laptops, medical implants (body corrosion-resistant), chemical equipment"},
+
+{sym:"W",id:"Tungsten",en:"Tungsten",mass:183.84,cat:3,year:1783,phase:"Solid",ion:7.98,melt:3695,chi:2.36,type:"Con",bg:0,grp:6,per:6,
+daily_id:"💡 Filamen lampu pijar, elektroda las TIG, mata bor industri, peluru armor-piercing",
+daily_en:"💡 Incandescent light bulb filaments, TIG welding electrodes, industrial drill bits, armor-piercing bullets"},
+
+{sym:"Re",id:"Renium",en:"Rhenium",mass:186.207,cat:3,year:1925,phase:"Solid",ion:7.88,melt:3459,chi:1.90,type:"Con",bg:0,grp:7,per:6,
+daily_id:"✈️ Superalloy bilah turbin mesin jet, katalis reformasi bensin, filamen pemanasan suhu tinggi",
+daily_en:"✈️ Jet engine turbine blade superalloys, gasoline reforming catalyst, high-temperature heating filaments"},
+
+{sym:"Os",id:"Osmium",en:"Osmium",mass:190.23,cat:3,year:1803,phase:"Solid",ion:8.44,melt:3306,chi:2.20,type:"Con",bg:0,grp:8,per:6,
+daily_id:"✒️ Ujung stylus piringan hitam, kontak listrik tahan aus, katalis asam osmik (biologi)",
+daily_en:"✒️ Vinyl record stylus tips, wear-resistant electrical contacts, osmic acid catalyst (biology)"},
+
+{sym:"Ir",id:"Iridium",en:"Iridium",mass:192.217,cat:3,year:1803,phase:"Solid",ion:9.06,melt:2719,chi:2.20,type:"Con",bg:0,grp:9,per:6,
+daily_id:"🚗 Elektroda busi platinum-iridium, kilogram prototype SI (dahulu), penanda batas KT asteroid",
+daily_en:"🚗 Platinum-iridium spark plug electrodes, (former) SI kilogram prototype, KT boundary marker"},
+
+{sym:"Pt",id:"Platina",en:"Platinum",mass:195.084,cat:3,year:1735,phase:"Solid",ion:9.00,melt:2041,chi:2.28,type:"Con",bg:0,grp:10,per:6,
+daily_id:"💍 Perhiasan mewah, konverter katalitik mobil, elektroda sel bahan bakar, obat kemoterapi cisplatin",
+daily_en:"💍 Luxury jewelry, automotive catalytic converters, fuel cell electrodes, cisplatin cancer drug"},
+
+{sym:"Au",id:"Emas",en:"Gold",mass:196.967,cat:3,year:null,phase:"Solid",ion:9.23,melt:1337.33,chi:2.54,type:"Con",bg:0,grp:11,per:6,
+daily_id:"💰 Perhiasan, konektor elektronik presisi, uang cadangan bank, pelapis astronaut suit",
+daily_en:"💰 Jewelry, precision electronic connectors, bank reserve currency, astronaut suit coating"},
+
+{sym:"Hg",id:"Merkuri",en:"Mercury",mass:200.592,cat:3,year:null,phase:"Liquid",ion:10.44,melt:234.32,chi:2.00,type:"Con",bg:0,grp:12,per:6,
+daily_id:"🌡️ Termometer merkuri (kini dilarang), lampu fluoresen CFL, sakelar tipping-bucket cuaca",
+daily_en:"🌡️ Mercury thermometers (now banned), CFL fluorescent lamps, weather tipping-bucket switches"},
+
+{sym:"Tl",id:"Talium",en:"Thallium",mass:204.38,cat:4,year:1861,phase:"Solid",ion:6.11,melt:577,chi:1.62,type:"Con",bg:0,grp:13,per:6,
+daily_id:"🏥 Scan jantung nuklir (Tl-201), detektor inframerah (TlBrI), riset superkonduktor suhu tinggi",
+daily_en:"🏥 Nuclear heart scan (Tl-201), infrared detectors (TlBrI), high-temperature superconductor research"},
+
+{sym:"Pb",id:"Timbal",en:"Lead",mass:207.2,cat:4,year:null,phase:"Solid",ion:7.42,melt:600.61,chi:2.33,type:"Con",bg:0,grp:14,per:6,
+daily_id:"🔋 Aki mobil (Pb-acid battery), perisai radiasi sinar-X, peluru, pipa air lama (kini dilarang)",
+daily_en:"🔋 Car batteries (Pb-acid), X-ray radiation shielding, bullets, old water pipes (now banned)"},
+
+{sym:"Bi",id:"Bismut",en:"Bismuth",mass:208.98,cat:4,year:1753,phase:"Solid",ion:7.29,melt:544.7,chi:2.02,type:"SC",bg:0.0002,grp:15,per:6,
+daily_id:"💊 Obat maag Pepto-Bismol, pengganti timbal ramah lingkungan, logam solder suhu rendah, pernak-pernik warna-warni",
+daily_en:"💊 Pepto-Bismol stomach medicine, eco-friendly lead substitute, low-temp solder metal, colorful crystals"},
+
+{sym:"Po",id:"Polonium",en:"Polonium",mass:209,cat:4,year:1898,phase:"Solid",ion:8.42,melt:527,chi:2.00,type:"SC",bg:0.3,grp:16,per:6,
+daily_id:"⚡ Penetral muatan statis di mesin cetak industri (Po-210), sumber panas termoelektrik",
+daily_en:"⚡ Static charge neutralizer in industrial printing (Po-210), thermoelectric heat sources"},
+
+{sym:"At",id:"Astatin",en:"Astatine",mass:210,cat:7,year:1940,phase:"Solid",ion:9.30,melt:575,chi:2.20,type:"SC",bg:0.7,grp:17,per:6,
+daily_id:"🏥 Penelitian terapi target kanker tiroid (At-211 alpha-radiotherapy), riset kimia radioaktif",
+daily_en:"🏥 Targeted thyroid cancer therapy research (At-211 alpha-radiotherapy), radioactive chemistry research"},
+
+{sym:"Rn",id:"Radon",en:"Radon",mass:222,cat:8,year:1900,phase:"Gas",ion:10.75,melt:202,chi:null,type:"Ins",bg:null,grp:18,per:6,
+daily_id:"⚠️ Gas radioaktif dari tanah (risiko kanker paru di rumah), tracer geofisika bumi",
+daily_en:"⚠️ Radioactive gas from soil (lung cancer risk in homes), geophysical earth tracer"},
+
+{sym:"Fr",id:"Fransium",en:"Francium",mass:223,cat:1,year:1939,phase:"Solid",ion:4.07,melt:300,chi:0.79,type:"Con",bg:0,grp:1,per:7,
+daily_id:"🔬 Hanya ada dalam jejak di alam, riset sifat unsur paling elektronegatif rendah",
+daily_en:"🔬 Only trace amounts in nature, research into lowest electronegativity element properties"},
+
+{sym:"Ra",id:"Radium",en:"Radium",mass:226,cat:2,year:1898,phase:"Solid",ion:5.28,melt:973,chi:0.90,type:"Con",bg:0,grp:2,per:7,
+daily_id:"☢️ Cat berpendar radium (jam tangan jadul; kini dilarang), terapi kanker historis Marie Curie, tracer geologi",
+daily_en:"☢️ Radium luminous paint (old watches; now banned), historical Marie Curie cancer therapy, geology tracer"},
+
+{sym:"Ac",id:"Aktinium",en:"Actinium",mass:227,cat:10,year:1899,phase:"Solid",ion:5.17,melt:1323,chi:1.10,type:"Con",bg:0,grp:3,per:7,
+daily_id:"🏥 Terapi kanker Ac-225 alpha (investigasi klinis), sumber neutron riset nuklir",
+daily_en:"🏥 Ac-225 alpha cancer therapy (clinical investigation), nuclear research neutron source"},
+
+{sym:"Th",id:"Torium",en:"Thorium",mass:232.038,cat:10,year:1828,phase:"Solid",ion:6.31,melt:2023,chi:1.30,type:"Con",bg:0,grp:null,per:7,
+daily_id:"⚛️ Bahan bakar reaktor nuklir molten salt (masa depan), elektroda las TIG, lensa kamera optik",
+daily_en:"⚛️ Molten salt nuclear reactor fuel (future), TIG welding electrodes, optical camera lenses"},
+
+{sym:"Pa",id:"Protaktinium",en:"Protactinium",mass:231.036,cat:10,year:1913,phase:"Solid",ion:5.89,melt:1841,chi:1.50,type:"Con",bg:0,grp:null,per:7,
+daily_id:"🔬 Penelitian dasar sifat aktinida, penanggalan usia sedimen laut (Pa-231/U-235)",
+daily_en:"🔬 Fundamental actinide property research, ocean sediment age dating (Pa-231/U-235)"},
+
+{sym:"U",id:"Uranium",en:"Uranium",mass:238.029,cat:10,year:1789,phase:"Solid",ion:6.19,melt:1405.3,chi:1.38,type:"Con",bg:0,grp:null,per:7,
+daily_id:"☢️ Bahan bakar PLTN (listrik 10% dunia), senjata nuklir, keramik kuning kuno, kaca uranium",
+daily_en:"☢️ Nuclear power plant fuel (10% world electricity), nuclear weapons, old yellow ceramics, uranium glass"},
+
+{sym:"Np",id:"Neptunium",en:"Neptunium",mass:237.0,cat:10,year:1940,phase:"Solid",ion:6.27,melt:917,chi:1.36,type:"Con",bg:0,grp:null,per:7,
+daily_id:"🔬 Prekursor Pu-238 (baterai RTG Voyager & rover Mars), riset nuklir teraktini",
+daily_en:"🔬 Pu-238 precursor (RTG batteries in Voyager & Mars rovers), actinide nuclear research"},
+
+{sym:"Pu",id:"Plutonium",en:"Plutonium",mass:244.0,cat:10,year:1940,phase:"Solid",ion:6.03,melt:912.5,chi:1.28,type:"Con",bg:0,grp:null,per:7,
+daily_id:"☢️ Bahan bakar reaktor nuklir MOX, RTG generator Voyager, New Horizons (Pluto mission)",
+daily_en:"☢️ MOX nuclear reactor fuel, RTG generator in Voyager & New Horizons (Pluto mission)"},
+
+{sym:"Am",id:"Amerisium",en:"Americium",mass:243.0,cat:10,year:1944,phase:"Solid",ion:5.99,melt:1449.0,chi:1.13,type:"Con",bg:0,grp:null,per:7,
+daily_id:"🚨 Detektor asap ionisasi di rumah (Am-241) — hampir setiap detector asap mengandung ini!",
+daily_en:"🚨 Household ionization smoke detectors (Am-241) — nearly every smoke detector contains this!"},
+
+{sym:"Cm",id:"Kurium",en:"Curium",mass:247.0,cat:10,year:1944,phase:"Solid",ion:6.02,melt:1613.0,chi:1.28,type:"Con",bg:0,grp:null,per:7,
+daily_id:"🚀 Spektrometer alfa (APXS) di rover Mars Sojourner & Spirit, riset nuklir",
+daily_en:"🚀 Alpha particle X-ray spectrometer (APXS) on Mars rovers Sojourner & Spirit, nuclear research"},
+
+{sym:"Bk",id:"Berkelium",en:"Berkelium",mass:247.0,cat:10,year:1949,phase:"Solid",ion:6.23,melt:1259.0,chi:1.30,type:"Con",bg:0,grp:null,per:7,
+daily_id:"🔬 Target sintesis Ts (unsur 117), penelitian kimia aktinida berat, produksi Cf-252",
+daily_en:"🔬 Synthesis target for Ts (element 117), heavy actinide chemistry research, Cf-252 production"},
+
+{sym:"Cf",id:"Kalifornium",en:"Californium",mass:251.0,cat:10,year:1950,phase:"Solid",ion:6.30,melt:1173.0,chi:1.30,type:"Con",bg:0,grp:null,per:7,
+daily_id:"☢️ Sumber neutron inisiasi reaktor nuklir, analisis aktivasi neutron geologi & arkeologi",
+daily_en:"☢️ Nuclear reactor neutron source for startup, neutron activation analysis in geology & archaeology"},
+
+{sym:"Es",id:"Einsteinium",en:"Einsteinium",mass:252.0,cat:10,year:1952,phase:"Solid",ion:6.42,melt:1133.0,chi:1.30,type:"Con",bg:0,grp:null,per:7,
+daily_id:"🔬 Ditemukan dari sisa ledakan uji coba nuklir Ivy Mike 1952, riset sifat aktinida",
+daily_en:"🔬 Discovered from residue of 1952 Ivy Mike nuclear test, actinide property research"},
+
+{sym:"Fm",id:"Fermium",en:"Fermium",mass:257.0,cat:10,year:1952,phase:"Solid",ion:6.50,melt:1527.0,chi:1.30,type:"Con",bg:0,grp:null,per:7,
+daily_id:"🔬 Riset nuklir dasar, ditemukan dari sisa uji coba bom hidrogen, hanya puluhan atom tersedia",
+daily_en:"🔬 Fundamental nuclear research, found in hydrogen bomb test residue, only dozens of atoms available"},
+
+{sym:"Md",id:"Mendelevium",en:"Mendelevium",mass:258.0,cat:10,year:1955,phase:"Solid",ion:6.58,melt:1100.0,chi:1.30,type:"Con",bg:0,grp:null,per:7,
+daily_id:"🔬 Dinamai Mendeleev (penemu tabel periodik), hanya bisa dibuat atom per atom di akselerator",
+daily_en:"🔬 Named after Mendeleev (periodic table creator), can only be made atom by atom in accelerators"},
+
+{sym:"No",id:"Nobelium",en:"Nobelium",mass:259.0,cat:10,year:1958,phase:"Solid",ion:6.65,melt:1100.0,chi:1.30,type:"Con",bg:0,grp:null,per:7,
+daily_id:"🔬 Dinamai Alfred Nobel, riset sifat kimia aktinida, hanya beberapa milisekond hidup",
+daily_en:"🔬 Named after Alfred Nobel, actinide chemistry research, only milliseconds of lifetime"},
+
+{sym:"Lr",id:"Lawrensium",en:"Lawrencium",mass:262.0,cat:10,year:1961,phase:"Solid",ion:4.96,melt:1900.0,chi:1.30,type:"Con",bg:0,grp:3,per:7,
+daily_id:"🔬 Unsur terakhir aktinida, riset dasar struktur elektron unsur superberat",
+daily_en:"🔬 Last actinide element, fundamental research on electronic structure of superheavy elements"},
+
+{sym:"Rf",id:"Rutherfordium",en:"Rutherfordium",mass:267.0,cat:3,year:1964,phase:"Solid",ion:6.0,melt:2400.0,chi:1.30,type:"Con",bg:0,grp:4,per:7,
+daily_id:"🔬 Unsur superberat pertama (Z>103), hidup 65 detik, riset tren periodik blok d",
+daily_en:"🔬 First superheavy element (Z>103), 65-second lifetime, d-block periodic trend research"},
+
+{sym:"Db",id:"Dubnium",en:"Dubnium",mass:268.0,cat:3,year:1968,phase:"Solid",ion:6.9,melt:2500.0,chi:1.30,type:"Con",bg:0,grp:5,per:7,
+daily_id:"🔬 Kontroversial penamaannya (USSR vs USA), hidup 28 jam (Db-268), riset kimia golongan 5",
+daily_en:"🔬 Controversial naming (USSR vs USA), 28-hour lifetime (Db-268), group-5 chemistry research"},
+
+{sym:"Sg",id:"Seaborgium",en:"Seaborgium",mass:269.0,cat:3,year:1974,phase:"Solid",ion:7.7,melt:2600.0,chi:1.30,type:"Con",bg:0,grp:6,per:7,
+daily_id:"🔬 Dinamai Glenn Seaborg, pertama kali dinamai saat orangnya masih hidup, riset golongan 6",
+daily_en:"🔬 Named after Glenn Seaborg, first named after a living person, group-6 chemistry research"},
+
+{sym:"Bh",id:"Bohrium",en:"Bohrium",mass:270.0,cat:3,year:1981,phase:"Solid",ion:7.9,melt:2600.0,chi:1.40,type:"Con",bg:0,grp:7,per:7,
+daily_id:"🔬 Dinamai Niels Bohr, terbuat di GSI Darmstadt, umur hidup beberapa milisekond",
+daily_en:"🔬 Named after Niels Bohr, made at GSI Darmstadt, millisecond lifetimes"},
+
+{sym:"Hs",id:"Hassium",en:"Hassium",mass:277.0,cat:3,year:1984,phase:"Solid",ion:7.6,melt:2500.0,chi:1.40,type:"Con",bg:0,grp:8,per:7,
+daily_id:"🔬 Dari kata Latin 'Hassia' (Hessen Jerman), OsO₄ properties predicted, riset golongan 8",
+daily_en:"🔬 From Latin 'Hassia' (Hesse Germany), OsO₄-like properties predicted, group-8 research"},
+
+{sym:"Mt",id:"Meitnerium",en:"Meitnerium",mass:278.0,cat:3,year:1982,phase:"Solid",ion:7.7,melt:2600.0,chi:1.50,type:"Con",bg:0,grp:9,per:7,
+daily_id:"🔬 Dinamai Lise Meitner (fisikawan nuklir wanita), 7.6ms half-life, riset unsur superberat",
+daily_en:"🔬 Named after Lise Meitner (female nuclear physicist), 7.6ms half-life, superheavy element research"},
+
+{sym:"Ds",id:"Darmstadtium",en:"Darmstadtium",mass:281.0,cat:3,year:1994,phase:"Solid",ion:7.6,melt:2000.0,chi:1.40,type:"Con",bg:0,grp:10,per:7,
+daily_id:"🔬 Dinamai kota Darmstadt (tempat GSI dibuat), microsecond lifetime, golongan nikel",
+daily_en:"🔬 Named after Darmstadt city (where GSI is), microsecond lifetime, nickel-group chemistry"},
+
+{sym:"Rg",id:"Roentgenium",en:"Roentgenium",mass:282.0,cat:3,year:1994,phase:"Solid",ion:7.7,melt:1700.0,chi:1.60,type:"Con",bg:0,grp:11,per:7,
+daily_id:"🔬 Dinamai Wilhelm Röntgen (penemu sinar-X), efek relativistik sangat kuat, golongan tembaga",
+daily_en:"🔬 Named after Wilhelm Röntgen (X-ray discoverer), strong relativistic effects, copper-group"},
+
+{sym:"Cn",id:"Kopernisium",en:"Copernicium",mass:285.0,cat:4,year:1996,phase:"Solid",ion:9.0,melt:283.0,chi:2.00,type:"Con",bg:0,grp:12,per:7,
+daily_id:"🔬 Dinamai Copernicus, diprediksi bersifat gas (efek relativistik), golongan seng",
+daily_en:"🔬 Named after Copernicus, predicted to be gaseous (relativistic effects), zinc group"},
+
+{sym:"Nh",id:"Nihonium",en:"Nihonium",mass:286.0,cat:4,year:2004,phase:"Solid",ion:7.3,melt:700.0,chi:1.80,type:"Con",bg:0,grp:13,per:7,
+daily_id:"🇯🇵 Unsur pertama ditemukan di Asia (RIKEN Jepang), dari 'Nihon' = Jepang, golongan boron",
+daily_en:"🇯🇵 First element discovered in Asia (RIKEN Japan), from 'Nihon' = Japan, boron group"},
+
+{sym:"Fl",id:"Flerovium",en:"Flerovium",mass:289.0,cat:4,year:1998,phase:"Solid",ion:8.3,melt:340.0,chi:2.00,type:"Con",bg:0,grp:14,per:7,
+daily_id:"🔬 Dinamai lab Flerov (JINR Rusia), sifat mendekati gas mulia (efek relativistik kuat)",
+daily_en:"🔬 Named after Flerov laboratory (JINR Russia), noble-gas-like properties due to strong relativistic effects"},
+
+{sym:"Mc",id:"Moskovium",en:"Moscovium",mass:290.0,cat:4,year:2003,phase:"Solid",ion:7.6,melt:670.0,chi:2.20,type:"Con",bg:0,grp:15,per:7,
+daily_id:"🔬 Dinamai Oblast Moskow, dibuat kolaborasi JINR-LLNL, golongan nitrogen/fosfor",
+daily_en:"🔬 Named after Moscow Oblast, made by JINR-LLNL collaboration, nitrogen/phosphorus group"},
+
+{sym:"Lv",id:"Livermorium",en:"Livermorium",mass:293.0,cat:4,year:2000,phase:"Solid",ion:7.6,melt:708.0,chi:2.30,type:"Con",bg:0,grp:16,per:7,
+daily_id:"🔬 Dinamai Lawrence Livermore Lab, diprediksi perilaku unik seperti logam, golongan kalkogen",
+daily_en:"🔬 Named after Lawrence Livermore Lab, predicted unique metal-like behavior, chalcogen group"},
+
+{sym:"Ts",id:"Tennessin",en:"Tennessine",mass:294.0,cat:7,year:2010,phase:"Solid",ion:7.4,melt:723.0,chi:2.10,type:"SC",bg:0.3,grp:17,per:7,
+daily_id:"🔬 Dinamai negara bagian Tennessee (Oak Ridge/Vanderbilt), halogen terberat, 51ms hidup",
+daily_en:"🔬 Named after Tennessee state (Oak Ridge/Vanderbilt), heaviest halogen, 51ms lifetime"},
+
+{sym:"Og",id:"Oganeson",en:"Oganesson",mass:294.0,cat:8,year:2002,phase:"Solid",ion:8.9,melt:325.0,chi:null,type:"Ins",bg:0,grp:18,per:7,
+daily_id:"🔬 Unsur terberat buatan manusia, dinamai Yuri Oganessian (fisikawan Rusia), hidup <5ms",
+daily_en:"🔬 Heaviest synthetic element, named after Yuri Oganessian (Russian physicist), <5ms lifetime"}
+];
+
+/* ───────────── KATEGORI ───────────── */
+const CATS = {
+  id:["","Alkali","Alkali Tanah","Logam Transisi","Logam Dasar","Metaloid","Non-Logam","Halogen","Gas Mulia","Lantanida","Aktinida"],
+  en:["","Alkali","Alkaline Earth","Transition Metal","Post-transition Metal","Metalloid","Non-metal","Halogen","Noble Gas","Lanthanide","Actinide"]
+};
+const CAT_COLORS = [
+  "","#ef5350","#ff9800","#42a5f5","#8d6e63","#66bb6a","#ffee58","#78909c","#ab47bc","#4dd0e1","#455a64"
+];
+
+/* ───────────── STATE ───────────── */
+let LANG = 'id';
+let currZ = 1;
+let currTab = 'kimia';
+let currIpTab = 'data';
+let vizMode = 'atom';
+
+/* ───────────── LANGUAGE ───────────── */
+const T = {
+  id: {
+    landing_sub: "PLATFORM EDUKASI SAINS INTERAKTIF",
+    land_btn: "MULAI BELAJAR",
+    land_desc: "Eksplorasi tabel periodik lengkap dengan AI",
+    tab_kimia:"KIMIA", tab_fisika:"FISIKA", tab_sejarah:"SEJARAH", tab_guna:"APLIKASI", tab_kehidupan:"KEHIDUPAN",
+    rp_identity:"IDENTITAS", rp_check:"🔬 CEK UNSUR SENYAWA", rp_combine:"🧪 PENGGABUNGAN SENYAWA", rp_daily:"🌍 KEHIDUPAN SEHARI-HARI",
+    tc1_h:"NAMA BENDA / SENYAWA", tc1_btn:"ANALISIS →", tc1_ph:"contoh: garam, air, cuka...",
+    tc2_h:"RUMUS / NAMA SENYAWA", tc2_btn:"JELASKAN →", tc2_ph:"contoh: H2O, CO2, NaCl...",
+    tc3_h:"UNSUR YANG DIPILIH", daily_hint:"Pilih unsur dari tabel untuk melihat hubungannya dengan kehidupan sehari-hari.",
+    orbital:"ORBITAL", energi:"ENERGI", inti:"INTI",
+    search_ph:"Cari unsur...",
+    m_bond_title:"⚗️ IKATAN ATOM", m_bond_sub:"Gabungkan dua unsur untuk melihat jenis ikatan", m_bond_btn:"GABUNGKAN",
+    ip_data:"DATA", ip_kimia:"KIMIA", ip_fisika:"FISIKA", ip_ai:"AI ✨",
+    legend_title:"🎨 KELOMPOK UNSUR",
+    legend_items:[
+      ["#ef5350","Alkali","Logam sangat reaktif, 1 elektron valensi."],
+      ["#ff9800","Alkali Tanah","Logam reaktif, 2 elektron valensi."],
+      ["#42a5f5","Logam Transisi","Orbital d sebagian terisi."],
+      ["#8d6e63","Logam Dasar","Logam stabil, sisi kanan transisi."],
+      ["#66bb6a","Metaloid","Sifat antara logam & non-logam."],
+      ["#ffee58","Non-Logam","Keelektronegatifan tinggi."],
+      ["#78909c","Halogen","Non-logam reaktif, pembentuk garam."],
+      ["#ab47bc","Gas Mulia","Kulit elektron penuh, sangat stabil."],
+      ["#4dd0e1","Lantanida","Logam tanah jarang, sifat optik & magnet."],
+      ["#455a64","Aktinida","Logam berat radioaktif."]
+    ]
+  },
+  en: {
+    landing_sub: "INTERACTIVE SCIENCE EDUCATION PLATFORM",
+    land_btn: "START LEARNING",
+    land_desc: "Explore the complete periodic table with AI",
+    tab_kimia:"CHEMISTRY", tab_fisika:"PHYSICS", tab_sejarah:"HISTORY", tab_guna:"APPLICATION", tab_kehidupan:"DAILY LIFE",
+    rp_identity:"IDENTITY", rp_check:"🔬 COMPOUND ELEMENT CHECK", rp_combine:"🧪 COMPOUND EXPLORER", rp_daily:"🌍 DAILY LIFE",
+    tc1_h:"SUBSTANCE / COMPOUND NAME", tc1_btn:"ANALYZE →", tc1_ph:"e.g.: salt, water, vinegar...",
+    tc2_h:"FORMULA / COMPOUND NAME", tc2_btn:"EXPLAIN →", tc2_ph:"e.g.: H2O, CO2, NaCl...",
+    tc3_h:"SELECTED ELEMENT", daily_hint:"Select an element from the table to see its connection to daily life.",
+    orbital:"ORBITAL", energi:"ENERGY", inti:"NUCLEUS",
+    search_ph:"Search element...",
+    m_bond_title:"⚗️ ATOMIC BONDING", m_bond_sub:"Combine two elements to see bond type", m_bond_btn:"COMBINE",
+    ip_data:"DATA", ip_kimia:"CHEMISTRY", ip_fisika:"PHYSICS", ip_ai:"AI ✨",
+    legend_title:"🎨 ELEMENT GROUPS",
+    legend_items:[
+      ["#ef5350","Alkali","Highly reactive metals, 1 valence electron."],
+      ["#ff9800","Alkaline Earth","Reactive metals, 2 valence electrons."],
+      ["#42a5f5","Transition Metal","Partially filled d orbitals."],
+      ["#8d6e63","Post-transition Metal","Stable metals, right side of transition."],
+      ["#66bb6a","Metalloid","Properties between metal & non-metal."],
+      ["#ffee58","Non-metal","High electronegativity."],
+      ["#78909c","Halogen","Reactive non-metals, salt formers."],
+      ["#ab47bc","Noble Gas","Full electron shells, very stable."],
+      ["#4dd0e1","Lanthanide","Rare earth metals, optical & magnetic."],
+      ["#455a64","Actinide","Heavy radioactive metals."]
+    ]
+  }
+};
+
+/* ───────────── HELPERS ───────────── */
+function t(k){ return T[LANG][k] || k; }
+
+function getConf(Z){
+  const orb=[[1,'s',2],[2,'s',2],[2,'p',6],[3,'s',2],[3,'p',6],[4,'s',2],[3,'d',10],[4,'p',6],
+    [5,'s',2],[4,'d',10],[5,'p',6],[6,'s',2],[4,'f',14],[5,'d',10],[6,'p',6],
+    [7,'s',2],[5,'f',14],[6,'d',10],[7,'p',6]];
+  let e=Z, conf=[], shells={};
+  for(const[n,l,c]of orb){
+    if(e<=0)break;
+    const fill=Math.min(e,c);
+    conf.push(`${n}${l}<sup>${fill}</sup>`);
+    shells[n]=(shells[n]||0)+fill; e-=fill;
+  }
+  const maxS=Math.max(...Object.keys(shells));
+  return {str:conf.join(' '), val:shells[maxS], shells};
+}
+
+function findAtom(q){
+  if(!q) return null;
+  q=q.trim().toLowerCase();
+  let nm=null;
+  for(let i=1;i<ELEMENTS.length;i++){
+    const a=ELEMENTS[i]; if(!a) continue;
+    if(a.sym.toLowerCase()===q) return i;
+    if(!nm&&(a.en.toLowerCase().startsWith(q)||a.id.toLowerCase().startsWith(q))) nm=i;
+  }
+  return nm;
+}
+
+/* ───────────── APPLY LANGUAGE ───────────── */
+function applyLang(){
+  document.getElementById('land-sub').innerText=t('landing_sub');
+  document.getElementById('land-btn').innerText=t('land_btn');
+  document.getElementById('land-desc').innerText=t('land_desc');
+  document.getElementById('htab-kimia').innerText=t('tab_kimia');
+  document.getElementById('htab-fisika').innerText=t('tab_fisika');
+  document.getElementById('htab-sejarah').innerText=t('tab_sejarah');
+  document.getElementById('htab-guna').innerText=t('tab_guna');
+  document.getElementById('htab-kehidupan').innerText=t('tab_kehidupan');
+  document.getElementById('rp-identity').innerText=t('rp_identity');
+  document.getElementById('rp-check-title').innerText=t('rp_check');
+  document.getElementById('rp-combine-title').innerText=t('rp_combine');
+  document.getElementById('rp-daily-title').innerText=t('rp_daily');
+  document.getElementById('tc1-h').innerText=t('tc1_h');
+  document.getElementById('tc1-btn').innerText=t('tc1_btn');
+  document.getElementById('compound-input').placeholder=t('tc1_ph');
+  document.getElementById('tc2-h').innerText=t('tc2_h');
+  document.getElementById('tc2-btn').innerText=t('tc2_btn');
+  document.getElementById('formula-input').placeholder=t('tc2_ph');
+  document.getElementById('tc3-h').innerText=t('tc3_h');
+  document.getElementById('header-search').placeholder=t('search_ph');
+  document.getElementById('m-bond-title').innerText=t('m_bond_title');
+  document.getElementById('m-bond-sub').innerText=t('m_bond_sub');
+  document.getElementById('m-bond-btn').innerText=t('m_bond_btn');
+  document.querySelectorAll('.vctrl')[0].innerText=t('orbital');
+  document.querySelectorAll('.vctrl')[1].innerText=t('energi');
+  document.querySelectorAll('.vctrl')[2].innerText=t('inti');
+  const iptabs=document.querySelectorAll('.iptab');
+  iptabs[0].innerText=t('ip_data');
+  iptabs[1].innerText=t('ip_kimia');
+  iptabs[2].innerText=t('ip_fisika');
+  iptabs[3].innerText=t('ip_ai');
+  updateContent();
+}
+
+/* ───────────── UPDATE CONTENT ───────────── */
+function updateContent(){
+  const d=ELEMENTS[currZ]; if(!d) return;
+  const ei=getConf(currZ);
+  const name=LANG==='id'?d.id:d.en;
+  const catName=CATS[LANG][d.cat]||'';
+  const catColor=CAT_COLORS[d.cat]||'#888';
+
+  // Header
+  document.getElementById('ip-sym').innerText=d.sym;
+  document.getElementById('ip-name').innerText=name;
+  const catEl=document.getElementById('ip-cat');
+  catEl.innerText=catName;
+  catEl.style.background=catColor+'22';
+  catEl.style.color=catColor;
+  catEl.style.borderColor=catColor+'44';
+
+  // HUD
+  document.getElementById('hud-sym').innerText=d.sym;
+  document.getElementById('hud-z').innerText='Z = '+currZ;
+
+  // Stats
+  document.getElementById('st-z').innerText=currZ;
+  document.getElementById('st-mass').innerText=d.mass;
+  document.getElementById('st-val').innerText=ei.val;
+  document.getElementById('st-chi').innerText=d.chi?d.chi.toFixed(2):'—';
+
+  // IP Tab content
+  renderIpTab();
+
+  // Daily life
+  renderDaily();
+}
+
+function renderIpTab(){
+  const d=ELEMENTS[currZ]; if(!d) return;
+  const ei=getConf(currZ);
+  const name=LANG==='id'?d.id:d.en;
+  const catName=CATS[LANG][d.cat]||'';
+  let h='';
+
+  if(currIpTab==='data'){
+    const phMap={Gas:{id:'Gas',en:'Gas'},Solid:{id:'Padat',en:'Solid'},Liquid:{id:'Cair',en:'Liquid'}};
+    const tyMap={Con:{id:'Konduktor',en:'Conductor'},SC:{id:'Semikonduktor',en:'Semiconductor'},Ins:{id:'Isolator',en:'Insulator'}};
+    h=`<div class="ip-section">
+      <div class="ip-label">${LANG==='id'?'DATA UMUM':'GENERAL DATA'}</div>
+      ${kv(LANG==='id'?'Nomor Atom':'Atomic Number', currZ)}
+      ${kv(LANG==='id'?'Simbol':'Symbol', d.sym)}
+      ${kv(LANG==='id'?'Massa Atom':'Atomic Mass', d.mass+' u')}
+      ${kv(LANG==='id'?'Golongan':'Category', catName)}
+      ${kv(LANG==='id'?'Fase (STP)':'Phase (STP)', phMap[d.phase]?.[LANG]||d.phase)}
+      ${kv(LANG==='id'?'Tipe Material':'Material Type', tyMap[d.type]?.[LANG]||'—')}
+      ${kv(LANG==='id'?'Titik Leleh':'Melting Point', d.melt?d.melt+' K':'—')}
+    </div>
+    <div class="ip-section">
+      <div class="ip-label">${LANG==='id'?'DATA FISIKA':'PHYSICS DATA'}</div>
+      ${kv(LANG==='id'?'Energi Ionisasi':'Ionization Energy', d.ion?d.ion+' eV':'—')}
+      ${kv(LANG==='id'?'Elektronegativitas':'Electronegativity', d.chi?d.chi.toFixed(2):'—')}
+      ${kv(LANG==='id'?'Celah Pita':'Band Gap', d.bg===null?'—':d.bg===0?'0 eV':d.bg+' eV')}
+      ${kv(LANG==='id'?'Elektron Valensi':'Valence Electrons', ei.val)}
+      ${kv(LANG==='id'?'Periode':'Period', d.per)}
+      ${kv(LANG==='id'?'Tahun Ditemukan':'Year Discovered', d.year||'—')}
+    </div>`;
+  }
+  else if(currIpTab==='kimia'){
+    h=`<div class="ip-section">
+      <div class="ip-label">${LANG==='id'?'KONFIGURASI ELEKTRON':'ELECTRON CONFIGURATION'}</div>
+      <div class="conf-box">${ei.str}</div>
+    </div>
+    <div class="ip-section">
+      <div class="ip-label">${LANG==='id'?'STRUKTUR VALENSI':'VALENCE STRUCTURE'}</div>
+      <p>${LANG==='id'?`${name} memiliki <strong>${ei.val}</strong> elektron valensi.`:
+        `${name} has <strong>${ei.val}</strong> valence electrons.`}</p>
+      <p style="margin-top:8px;">${LANG==='id'?reactivDesc(d).id:reactivDesc(d).en}</p>
+    </div>
+    <div class="ip-section">
+      <div class="ip-label">${LANG==='id'?'SENYAWA UMUM':'COMMON COMPOUNDS'}</div>
+      <p style="font-size:12px;color:#8899aa;">
+        ${LANG==='id'?commonCompounds(currZ).id:commonCompounds(currZ).en}
+      </p>
+    </div>`;
+  }
+  else if(currIpTab==='fisika'){
+    const tyLabel={Con:{id:'Konduktor — menghantarkan listrik bebas',en:'Conductor — conducts electricity freely'},
+      SC:{id:'Semikonduktor — bisa diatur konduksinya',en:'Semiconductor — conduction can be controlled'},
+      Ins:{id:'Isolator — menghambat aliran listrik',en:'Insulator — blocks electrical flow'}};
+    h=`<div class="ip-section">
+      <div class="ip-label">${LANG==='id'?'FISIKA MATERIAL':'MATERIAL PHYSICS'}</div>
+      <p><strong>${LANG==='id'?'Tipe:':'Type:'}</strong> ${tyLabel[d.type]?.[LANG]||'—'}</p>
+      ${d.bg!==null?`<p style="margin-top:10px;"><strong>Band gap:</strong> ${d.bg===0?'0 eV (overlap)':d.bg+' eV'}</p>
+      <div style="margin:10px 0;height:6px;background:linear-gradient(to right,#00e5a0,#6c63ff,#ff6b6b);border-radius:3px;position:relative;">
+        <div style="position:absolute;top:-18px;font-size:10px;font-family:var(--mono);color:var(--muted);">0 eV — Konduktor | 0.1–3 eV — Semikonduktor | >3 eV — Isolator</div>
+      </div>`:''}
+    </div>
+    <div class="ip-section">
+      <div class="ip-label">${LANG==='id'?'DATA TERMAL':'THERMAL DATA'}</div>
+      ${kv(LANG==='id'?'Titik Leleh':'Melting Point', d.melt?d.melt+' K':'—')}
+      ${kv(LANG==='id'?'Energi Ionisasi':'Ionization Energy', d.ion?d.ion+' eV':'—')}
+    </div>`;
+  }
+  else if(currIpTab==='ai'){
+    h=`<div class="ip-section">
+      <div class="ip-label">AI INSIGHT ✨</div>
+      <div id="ai-insight-box">
+        <div class="ai-loading"><div class="dot-pulse"><span></span><span></span><span></span></div>
+        <span style="margin-left:4px;">${LANG==='id'?'Memuat insight AI...':'Loading AI insight...'}</span></div>
+      </div>
+    </div>`;
+    setTimeout(()=>loadAiInsight(currZ), 100);
+  }
+
+  document.getElementById('ip-content').innerHTML=h;
+  if(window.MathJax) MathJax.typesetPromise();
+}
+
+function kv(k,v){
+  return `<div class="kv-row"><span class="kv-key">${k}</span><span class="kv-val">${v}</span></div>`;
+}
+
+function reactivDesc(d){
+  if(d.cat===1) return {id:'Sangat reaktif, mudah melepas 1 elektron valensi untuk membentuk ion +1.',en:'Highly reactive, easily loses 1 valence electron to form +1 ions.'};
+  if(d.cat===8) return {id:'Sangat stabil (inert) karena kulit valensi penuh. Hampir tidak bereaksi.',en:'Very stable (inert) due to full valence shell. Barely reacts.'};
+  if(d.cat===7) return {id:'Sangat elektronegatif, reaktif, cenderung menerima 1 elektron untuk membentuk ion -1.',en:'Highly electronegative, reactive, tends to accept 1 electron to form -1 ions.'};
+  return {id:`Reaktivitas bergantung pada kondisi dan pasangan reaksi. Valensi ${d.cat<=2?2:'bervariasi'}.`,en:`Reactivity depends on conditions and reaction partner. Valence ${d.cat<=2?2:'varies'}.`};
+}
+
+function commonCompounds(Z){
+  const map={
+    1:{id:"H₂O (air), H₂O₂ (hidrogen peroksida), NH₃ (amonia), HCl (asam klorida), CH₄ (metana)",en:"H₂O (water), H₂O₂ (hydrogen peroxide), NH₃ (ammonia), HCl (hydrochloric acid), CH₄ (methane)"},
+    6:{id:"CO₂ (karbon dioksida), CH₄ (metana), C₆H₁₂O₆ (glukosa), CO (karbon monoksida), CaCO₃ (kapur)",en:"CO₂ (carbon dioxide), CH₄ (methane), C₆H₁₂O₆ (glucose), CO (carbon monoxide), CaCO₃ (limestone)"},
+    7:{id:"N₂ (gas nitrogen), NH₃ (amonia), NO₂ (nitrogen dioksida), HNO₃ (asam nitrat), N₂O (gas tawa)",en:"N₂ (nitrogen gas), NH₃ (ammonia), NO₂ (nitrogen dioxide), HNO₃ (nitric acid), N₂O (laughing gas)"},
+    8:{id:"H₂O (air), CO₂ (karbon dioksida), O₃ (ozon), SiO₂ (pasir/kaca), Fe₂O₃ (karat besi)",en:"H₂O (water), CO₂ (carbon dioxide), O₃ (ozone), SiO₂ (sand/glass), Fe₂O₃ (iron rust)"},
+    11:{id:"NaCl (garam), NaOH (soda api), NaHCO₃ (soda kue), Na₂SO₄ (sodium sulfat), Na₂CO₃ (soda abu)",en:"NaCl (salt), NaOH (lye), NaHCO₃ (baking soda), Na₂SO₄ (sodium sulfate), Na₂CO₃ (soda ash)"},
+    17:{id:"NaCl (garam), HCl (asam klorida), Cl₂ (gas klor), NaOCl (pemutih/bleach), PVC (plastik)",en:"NaCl (salt), HCl (hydrochloric acid), Cl₂ (chlorine gas), NaOCl (bleach), PVC (plastic)"},
+    26:{id:"Fe₂O₃ (karat), FeCl₃, FeS₂ (pirit emas palsu), Fe₃O₄ (magnetit), hemoglobin (darah)",en:"Fe₂O₃ (rust), FeCl₃, FeS₂ (fool's gold/pyrite), Fe₃O₄ (magnetite), hemoglobin (blood)"},
+    20:{id:"CaCO₃ (batu kapur/kapur), CaSO₄ (gips), CaO (kapur tohor), Ca(OH)₂ (air kapur), CaF₂ (fluorit)",en:"CaCO₃ (limestone/chalk), CaSO₄ (gypsum), CaO (quicklime), Ca(OH)₂ (limewater), CaF₂ (fluorite)"},
+  };
+  return map[Z]||{id:`Lihat ikatan ${ELEMENTS[Z]?.sym} dengan unsur umum di fitur BOND.`,en:`See ${ELEMENTS[Z]?.sym} bonding with common elements in the BOND feature.`};
+}
+
+function renderDaily(){
+  const d=ELEMENTS[currZ]; if(!d) return;
+  const daily=LANG==='id'?d.daily_id:d.daily_en;
+  const name=LANG==='id'?d.id:d.en;
+  document.getElementById('daily-content').innerHTML=
+    `<div style="font-size:13px;font-weight:500;color:var(--accent);margin-bottom:8px;">${d.sym} — ${name}</div>
+    <div style="font-size:12px;line-height:1.7;color:#a0aabb;">${daily}</div>`;
+}
+
+/* ───────────── AI INSIGHT ───────────── */
+async function loadAiInsight(Z){
+  const d=ELEMENTS[Z]; if(!d) return;
+  const box=document.getElementById('ai-insight-box');
+  if(!box) return;
+  const name=LANG==='id'?d.id:d.en;
+  const prompt=LANG==='id'
+    ?`Berikan penjelasan singkat dan menarik (3-4 kalimat) tentang unsur ${name} (${d.sym}, Z=${Z}) untuk pelajar SMA. Fokus pada fakta menarik atau sejarah penemuan. Gunakan bahasa Indonesia yang sederhana dan engaging.`
+    :`Give a brief, engaging explanation (3-4 sentences) about the element ${name} (${d.sym}, Z=${Z}) for high school students. Focus on interesting facts or discovery history. Use simple, engaging English.`;
+  const text = await callAi(prompt, 200);
+  box.innerHTML=`<div class="ai-result">${text.replace(/\n/g,'<br>')}</div>`;
+}
+
+/* ───────────── TOOL: CEK SENYAWA ───────────── */
+window.checkCompound = async()=>{
+  const input=document.getElementById('compound-input').value.trim();
+  if(!input) return;
+  const res=document.getElementById('compound-result');
+  res.className='tool-result show';
+  res.innerHTML=`<div class="ai-loading"><div class="dot-pulse"><span></span><span></span><span></span></div><span style="margin-left:6px;">Menganalisis...</span></div>`;
+
+  const prompt=LANG==='id'
+    ?`Jelaskan unsur-unsur penyusun dari "${input}" dalam konteks kimia. Format jawaban:\n1. Sebutkan rumus kimia (jika ada)\n2. Daftar unsur-unsur penyusun dan perannya masing-masing\n3. Satu kalimat tentang kegunaan sehari-hari\n\nGunakan bahasa Indonesia sederhana. Jawab dalam 5-8 baris pendek.`
+    :`Explain the constituent elements of "${input}" in a chemistry context. Format:\n1. Chemical formula (if applicable)\n2. List of elements and their roles\n3. One sentence about daily use\n\nUse simple English. Answer in 5-8 short lines.`;
+  const text = await callAi(prompt, 200);
+  res.innerHTML = `<div style="white-space:pre-wrap;">${text}</div>`;
+};
+
+// ─── AI PROVIDERS ───
+let AI_PROVIDER = localStorage.getItem('AI_PROVIDER') || 'demo';
+let OPENAI_API_KEY = localStorage.getItem('OMNI_ATOM_API_KEY') || '';
+let GEMINI_API_KEY = localStorage.getItem('GEMINI_API_KEY') || '';
+let GROQ_API_KEY = localStorage.getItem('GROQ_API_KEY') || '';
+
+const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent';
+const GROQ_API_URL = 'https://api.groq.com/openai/v1/chat/completions';
+const OPENAI_API_URL = 'https://api.openai.com/v1/chat/completions';
+
+function isDemoMode(){ 
+  return true;
+}
+const AI_DEMO_RESPONSES = {
+  // CO2 Responses
+  'co2-fisika': 'CO₂ adalah molekul linear dengan dua ikatan kovalen polar C=O. Dalam fisika material, gas CO₂ memiliki sifat optik unik—menyerap radiasi inframerah kuat yang menjadikannya gas rumah kaca penting. Saat didinginkan di bawah -78.5°C, CO₂ mengendap menjadi dry ice padat. Transparansi kristal CO₂ tinggi di spektrum inframerah jauh.',
+  'co2-kimia': 'Secara kimia, CO₂ adalah produk oksidasi karbon sempurna. Reaksi pembakaran: C + O₂ → CO₂ melepaskan energi 393 kJ/mol. CO₂ bereaksi dengan air: CO₂ + H₂O → H₂CO₃. Dengan basa: 2NaOH + CO₂ → Na₂CO₃ + H₂O. Ikatan C-O sangat kuat (799 kJ/mol).',
+  'co2-sejarah': 'Joseph Black (1754) pertama kali mengidentifikasi CO₂ saat mempelajari kapur (CaCO₃), menyebutnya "udara padam". Antoine Lavoisier memperjelas CO₂ adalah kombinasi karbon + oksigen. CO₂ dikenal dari fermentasi anggur dan gas gunung berapi.',
+  'co2-kehidupan': 'CO₂ hadir dalam napas manusia (5% exhale), gas buang kendaraan, minuman berkarbonasi, pemadam api, dan dry ice. Tumbuhan menggunakan CO₂ dalam fotosintesis: 6CO₂ + 6H₂O → C₆H₁₂O₆ + 6O₂.',
+  
+  // H2O Responses
+  'h2o-fisika': 'Air (H₂O) memiliki struktur bent dengan sudut ikat 104.5°. Ikatan hidrogen antarmolekul sangat kuat (~20 kJ/mol), menyebabkan: kepadatan maksimal pada 4°C, kapasitas panas spesifik 4.18 J/g·K (tertinggi), titik didih 100°C, tensionmuka tinggi.',
+  'h2o-kimia': 'H₂O adalah molekul polar (dipol 1.85 Debye) dan pelarut universal. Reaksi: H₂ + ½O₂ → H₂O (ΔH=-285.8 kJ/mol). Ionisasi: 2H₂O ⇌ H₃O⁺ + OH⁻ (Kw=10⁻¹⁴). Fotosintesis: 2H₂O → O₂ + 4H⁺ + 4e⁻.',
+  'h2o-sejarah': 'Zaman Yunani kuno menganggap air unsur dasar. Abad 1700, Henry Cavendish menemukan hidrogen dan menyimpulkan air adalah kombinasi H+O. Elektrolisis mengkonfirmasi rumus H₂O.',
+  'h2o-kehidupan': 'Air dalam tubuh manusia (60%), makanan, pertanian, industri. Siklus air: penguapan → kondensasi → presipitasi → aliran. Kehidupan memerlukan air cair untuk metabolisme. 71% bumi adalah air.',
+  
+  // NaCl Responses
+  'nacl-fisika': 'NaCl adalah kristal ionik kubik dengan struktur rock salt. Koordinasi [6:6], titik leleh 801°C akibat gaya Coulomb kuat. Band gap ~8 eV. Konduktivitas tinggi saat leleh/larut karena ion bebas bergerak.',
+  'nacl-kimia': 'NaCl terbentuk dari reaksi ionik: 2Na + Cl₂ → 2NaCl. Terurai dalam air: NaCl → Na⁺ + Cl⁻. Dengan asam pekat: NaCl + H₂SO₄ → NaHSO₄ + HCl↑. Dengan nitrat perak: NaCl + AgNO₃ → AgCl↓ + NaNO₃.',
+  'nacl-sejarah': 'Garam telah digunakan sejak 5000 SM untuk pengawetan makanan dan perdagangan. Elektrolisis air asin menghasilkan Na, Cl₂, NaOH (industri klor-alkali). Garam dianggap "emas putih" di peradaban kuno.',
+  'nacl-kehidupan': 'Garam dalam makanan (2-3 g/hari), pengawetan daging/ikan, detergen laundry, es jalan, pemurnian air. Dalam tubuh: Na⁺/K⁺ pump mengatur keseimbangan cairan dan elektrolit.',
+  
+  // General Compound Questions
+  'oksigen-general': 'Oksigen (O₂) adalah gas tak berwarna, tak berbau yang menyusun 21% udara. Essensial untuk respirasi aerob dan pembakaran. Ditemukan oleh Scheele (1772). Titik didih -183°C, reaktif dengan hampir semua unsur kecuali gas mulia. Digunakan dalam pengelasan, industri, dan kedokteran.',
+  
+  'hidrogen-general': 'Hidrogen (H₂) adalah gas paling ringan dengan massa atom 1.008. 75% komposisi alam semesta. Menyala dengan nyala biru saat terbakar (2H₂ + O₂ → 2H₂O). Tidak berbau, tidak berwarna. Digunakan dalam bahan bakar roket, sintesis amonia, dan fuel cell.',
+  
+  'nitrogen-general': 'Nitrogen (N₂) menyusun 78% udara. Gas inert pada suhu kamar, titik didih -196°C. Essensial untuk protein dan asam nukleat. Fiksasi nitrogen: N₂ + 3H₂ → 2NH₃ menghasilkan amonia untuk pupuk. Haber-Bosch adalah proses industri terbesar.',
+  
+  'karbon-general': 'Karbon (C) adalah unsur multivalen (Z=6) dengan 4 elektron valensi. Isotop: C-12 (standar), C-14 (dating radioaktif). Alotrop: berlian (keras), grafit (lunak), fullerene. Dasar kimia organik dan semua makhluk hidup. Dalam batu bara, minyak, gas alam.',
+  
+  // Bonding Questions
+  'ikatan-ionik': 'Ikatan ionik terjadi antara logam (donor elektron) dan nonlogam (penerima elektron). Elektron ditransfer sepenuhnya membentuk kation + anion. Contoh: NaCl, CaCl₂. Sifat: keras, titik leleh tinggi, konduktif saat leleh, larut dalam air polar.',
+  'ikatan-kovalen': 'Ikatan kovalen terjadi saat dua atom berbagi pasangan elektron. Bisa polar (berbeda elektronegativitas) atau nonpolar (sama). Contoh polar: HCl. Nonpolar: Cl₂. Sifat: titik leleh rendah, molekuler gas/cair, kurang konduktif.',
+  'ikatan-hidrogen': 'Ikatan hidrogen terjadi antara H terikat pada N, O, F dengan pasangan elektron bebas atom lain. Energi ~20 kJ/mol (lebih lemah dari kovalen). Sebab: polaritas ekstrem H-F, H-O, H-N. Penting dalam DNA, protein, air.',
+  'ikatan-logam': 'Ikatan logam: elektron valensi "mengapung" dalam lautan elektron di sekitar kation. Sifat: konduktif panas/listrik, plastis, liat, kilau metalik. Contoh: Fe, Cu, Al. Model "sea of electrons" menjelaskan kelenturan.',
+  
+  // Atom Structure Questions
+  'atom-struktur': 'Atom terdiri atas inti (proton+neutron) dan kulit elektron. Proton (Z) menentukan unsur. Neutron (A-Z) memberi stabilitas. Elektron (-) mengorbit dalam orbital. Kulit elektron: K(2), L(8), M(18), dst. Konfigurasi elektron menentukan reaktivitas.',
+  'proton-neutron': 'Proton: partikel positif, massa 1 u, Z=1. Neutron: netral, massa 1 u. Proton menentukan nomor atom (identitas). Neutron menentukan nomor massa. Rasio N/Z menentukan stabilitas inti. Unsur yang sama (Z sama) bisa berbeda neutron = isotop.',
+  'elektron-orbital': 'Elektron tidak mengorbit seperti planet, tapi menempati orbital (keadaan kuantum) dengan probabilitas posisi. Orbital s, p, d, f memiliki bentuk berbeda. Prinsip Aufbau: isi orbital energi rendah dulu. Pauli: maksimal 2 elektron per orbital dengan spin berlawanan.',
+  
+  // Periodic Table Concepts
+  'periodik-tren': 'Tren periodik: Ionisasi dan elektronegativitas meningkat ke kanan dan atas. Jari-jari atom menurun ke kanan dan atas. Afinitas elektron bervariasi. Logam di kiri, nonlogam di kanan, metaloid diagonal. Golongan 1=Logam alkali, 17=Halogen, 18=Gas mulia.',
+  'ionisasi-energi': 'Energi ionisasi: energi untuk melepas elektron terlemah. Pertama IE meningkat ke kanan (proton lebih banyak). Kulit penuh lebih stabil (IE tinggi pada He, Ne, Ar). Pertama IE lebih kecil dari kedua IE (elektron berikutnya lebih terikat).',
+  'elektronegativitas': 'Elektronegativitas (Pauling 0-4): kemampuan tarik elektron dalam ikatan. F tertinggi (4.0), Li terendah (0.98). Perbedaan EN menunjukkan polaritas ikatan. EN > 1.7 = ionik, 0.4-1.7 = kovalen polar, < 0.4 = kovalen nonpolar.',
+  
+  // Reactions
+  'pembakaran': 'Pembakaran: reaksi eksotermik dengan oksigen. Lengkap: CₓHᵧ + O₂ → CO₂ + H₂O (energi besar). Tidak lengkap: CO + soot terbentuk. Diperlukan: bahan bakar + oksigen + panas (segitiga api). Pembakaran spesifik: S→SO₂, P→P₂O₅, logam→oksida.',
+  'redoks': 'Redoks: transfer elektron. Oksidasi (lepas e⁻), reduksi (dapat e⁻). Agen reduksi: unsur teroksidasi. Agen oksidasi: unsur tereduksi. Contoh: Fe + Cu²⁺ → Fe²⁺ + Cu (Fe teroksidasi, Cu tereduksi). Bilangan oksidasi melacak e⁻.',
+  'asam-basa': 'Asam (Arrhenius): melepas H⁺, pH<7. Basa: melepas OH⁻, pH>7. Netral: pH=7 (air murni). Skala pH: 0-14. Kuat: HCl, HNO₃, NaOH. Lemah: asam asetat, amonia. Titrasi: volume asam × konsentrasi = volume basa × konsentrasi.',
+  
+  // Element Insights
+  'element-hydrogen': 'Hidrogen (H, Z=1) adalah unsur paling ringan dan paling melimpah. Isotop: protium (¹H), deuterium (²H), tritium (³H). Ditemukan Cavendish 1776. Digunakan: bahan bakar, sintesis, pendingin reaktor nuklir. Futuristik: hydrogen economy.',
+  'element-carbon': 'Karbon (C, Z=6) dapat membentuk 4 ikatan (tetravalensi). Alotrop: berlian (keras, isolator), grafit (lunak, konduktif), C₆₀ (fullerene). Dasar semua organisme. Radiokarbon dating: ¹⁴C → ¹⁴N (t½=5730 thn).',
+  'element-nitrogen': 'Nitrogen (N, Z=7) unsur ke-7, 78% udara. Triple bond N≡N sangat kuat (945 kJ/mol) → N₂ inert. Haber-Bosch: N₂+3H₂⇌2NH₃ (industri pupuk terbesar). NOx: polutan, photochemical smog. Nitrida logam: keras, titik leleh tinggi.',
+  'element-oxygen': 'Oksigen (O, Z=8) unsur ke-8, 21% udara, 46% kerak bumi. Allotrop: O₂ (dioksigen, stabil), O₃ (ozon, reaktif). Essensial respirasi: C₆H₁₂O₆+6O₂→6CO₂+6H₂O+energi. Oksida: senyawa O dengan unsur lain. Peroksida: O₂²⁻.',
+  'element-iron': 'Besi (Fe, Z=26) logam transisi, unsur ke-26. Ferromagnetik (magnit alami). Baja: Fe+C (0.2-2.1%). Korosi: 4Fe+3O₂+6H₂O→4Fe(OH)₃. Heme: Fe²⁺ dalam hemoglobin, transport oksigen. Essensial tubuh (anemia jika kurang).',
+  'element-copper': 'Tembaga (Cu, Z=29) logam mulia, merah keemasan. Konduktor panas/listrik terbaik (setelah Ag). Isotop stabil: ⁶³Cu, ⁶⁵Cu. CuSO₄: blue vitriol, sulfat tembaga II. Cu⁺ vs Cu²⁺: ion tembaga. Patina hijau: Cu₂(OH)₂CO₃ oksidasi.',
+  
+  // General Science Q&A
+  'question-proton': 'Proton adalah partikel positif dalam inti atom. Ditemukan Rutherford 1919. Massa ≈ 1 u (1.67×10⁻²⁷ kg). Nomor proton = nomor atom = identitas unsur. Hydrogen hanya 1 proton. Semua unsur identik memiliki proton jumlah sama.',
+  'question-elektron': 'Elektron adalah partikel negatif, massa 1/1836 u. Mengorbit inti dalam orbital probabilitas (bukan orbit determinik). Konfigurasi elektron valensi menentukan reaktivitas kimia. Eksitasi: elektron naik level energi (absorb foton). Deeksitasi: emit foton (warna cahaya).',
+  'question-inti': 'Inti atom terdiri proton + neutron (nucleon). Ukuran inti ~10⁻¹⁵ m (femtometer). Gaya nuklir kuat menahan proton. Inti stabil jika N/Z rasio optimal (~1 untuk unsur ringan, ~1.5 berat). Inti tidak stabil → radioaktif (α, β, γ decay).',
+  'question-isotop': 'Isotop: atom unsur sama (Z sama) tapi neutron berbeda (A berbeda). Contoh: ¹²C, ¹³C, ¹⁴C. Sifat kimia sama (elektron sama), fisika beda (massa berbeda). ¹⁴C radioaktif → carbon dating. Deuterium (²H) = hydrogen berat, tritium (³H) radioaktif.',
+  'question-mol': 'Mol: satuan jumlah zat (12 g ¹²C = 1 mol = 6.022×10²³ partikel = Bilangan Avogadro). Konversi: massa(g) / Mr = mol. Konsentrasi M = mol/L. Gas ideal: 1 mol ≈ 22.4 L pada STP. Penting untuk stoikiometri reaksi.',
+  'question-mol-volume': 'Volume molar gas ideal 22.4 L/mol pada STP (0°C, 1 atm). Persamaan ideal gas: PV=nRT. Pada kondisi lain: V = nRT/P. Akurat untuk gas ideal (tekanan rendah, suhu tinggi).',
+  'question-stoikiometri': 'Stoikiometri: perhitungan mol dalam reaksi berdasarkan koefisien. Contoh: 2H₂ + O₂ → 2H₂O (perbandingan mol 2:1:2). Reaktan pembatas: habis duluan. Yield: produk aktual / teoritis × 100%. Penting optimasi industri.',
+  
+  'default-response': 'Materi pembelajaran tersedia untuk: unsur (H, C, N, O, Fe, Cu), senyawa (CO₂, H₂O, NaCl), ikatan (ionik, kovalen, hidrogen, logam), struktur atom, tren periodik, reaksi, dan konsep dasar kimia. Pilih topik untuk informasi lengkap.'
+};
+const MATERIAL_FALLBACK = 'Materi tidak ditemukan. Coba pertanyaan tentang unsur (H, C, O, N, Fe) atau senyawa (CO₂, H₂O, NaCl).';
+const MATERIAL_KNOWN = {
+  'CO2': {
+    q:'CO₂',
+    general:'Karbon dioksida adalah gas tak berwarna yang muncul saat bahan organik terbakar dan saat pernapasan. Ini penting dalam fisika material karena mempengaruhi suhu permukaan dan proses katalitik.',
+    fisika:'Dalam konteks fisika material, CO₂ dikenal sebagai gas rumah kaca yang menyerap radiasi infra merah dan bekerja dalam proses pemadaman api dengan menggantikan oksigen. Gas ini juga digunakan dalam pendinginan bertekanan dan studi termodinamika gas ideal.',
+    kimia:'CO₂ adalah molekul linear dengan ikatan kovalen antara satu atom karbon dan dua atom oksigen. Reaksinya meliputi pembakaran bahan bakar organik dan reaksi dengan basa seperti NaOH membentuk karbonat.',
+    sejarah:'Joseph Black pertama kali mengenali CO₂ pada abad ke-18 saat mempelajari gas “udara padam” dari pembakaran kapur. Penelitian ini menjadi langkah penting dalam kimia gas.',
+    kehidupan:'Karbon dioksida hadir dalam napas manusia, gas buang kendaraan, minuman berkarbonasi, dan tabung pemadam api CO₂. Di permukaan bumi, jumlahnya dikendalikan oleh tumbuhan melalui fotosintesis.',
+    image:'https://source.unsplash.com/600x400/?co2,carbon-dioxide,fire-extinguisher'
+  },
+  'H2O': {
+    q:'H₂O',
+    general:'Air adalah molekul paling penting bagi kehidupan dan bahan acuan dalam fisika dan kimia. Struktur H₂O membentuk ikatan hidrogen yang unik dan menjelaskan banyak sifat termal.',
+    fisika:'Air memiliki kapasitas panas tinggi dan fase padat, cair, gas yang unik karena ikatan hidrogen. Ini penting dalam fisika material untuk pendinginan, pelarut, dan studi sifat termal pada material polar.',
+    kimia:'H₂O adalah molekul polar yang bertindak sebagai pelarut universal. Reaksi kimia air meliputi hidrasi, hidrolisis, dan pembentukan ion H₃O⁺/OH⁻ dalam larutan asam-basa.',
+    sejarah:'Konsep air sebagai unsur awal ditemukan sejak zaman Yunani, tetapi penelitian modern tentang struktur kimia air berkembang pada abad ke-18 melalui eksperimen elektrolisis dan hidrogen oksida.',
+    kehidupan:'Air ada dalam tubuh manusia, makanan, awan, dan proses industri. Gambar air dalam kehidupan nyata menekankan peran H₂O dalam minum, pembuangan, dan ekosistem.',
+    image:'https://source.unsplash.com/600x400/?water,water-molecule,liquid'
+  },
+  'NACL': {
+    q:'NaCl',
+    general:'Natrium klorida atau garam dapur adalah kristal ionik yang sangat umum. Ini digunakan dalam makanan, pengawetan, dan industri kimia.',
+    fisika:'NaCl adalah padatan kristal ionik dengan struktur kubik. Gaya elektrostatik antara ion Na⁺ dan Cl⁻ menjelaskan titik leleh tinggi dan sifat konduktivitas saat dilebur/terlarut.',
+    kimia:'Secara kimia, NaCl terbentuk dari ikatan ionik antara natrium dan klor. Reaksinya meliputi pelarutan dalam air dan elektrolisis untuk menghasilkan Na dan Cl₂.',
+    sejarah:'Garam telah digunakan sejak peradaban kuno sebagai bahan makanan dan mata uang. Penelitian kimia modern tentang garam dimulai ketika elektrolisis air asin menghasilkan gas hidrogen dan klorin.',
+    kehidupan:'Garam ada dalam makanan, proses pengawetan, dan cairan tubuh. Foto garam dapur atau kristal garam memberi konteks nyata untuk kehidupan sehari-hari.',
+    image:'https://source.unsplash.com/600x400/?salt,table-salt,sea-salt'
+  }
+};
+
+function normalizeTopic(topic){
+  return topic.trim().toUpperCase().replace(/[^A-Z0-9]+/g,'');
+}
+
+async function callAi(prompt, maxTokens=400){
+  // OFFLINE DEMO ENGINE (tanpa API call sama sekali).
+  // Semua respons berasal dari template/materi lokal.
+  const p = (prompt || '').toLowerCase();
+  
+  // Exact matches for CO2
+  if(p.includes('co2')) {
+    if(p.includes('fisika')||p.includes('physics')) return AI_DEMO_RESPONSES['co2-fisika'];
+    if(p.includes('kimia')||p.includes('chemistry')) return AI_DEMO_RESPONSES['co2-kimia'];
+    if(p.includes('sejarah')||p.includes('history')) return AI_DEMO_RESPONSES['co2-sejarah'];
+    if(p.includes('kehidupan')||p.includes('daily')) return AI_DEMO_RESPONSES['co2-kehidupan'];
+    return AI_DEMO_RESPONSES['co2-fisika'];
+  }
+  
+  // Exact matches for H2O
+  if(p.includes('h2o')||p.includes('air')||p.includes('water')) {
+    if(p.includes('fisika')||p.includes('physics')) return AI_DEMO_RESPONSES['h2o-fisika'];
+    if(p.includes('kimia')||p.includes('chemistry')) return AI_DEMO_RESPONSES['h2o-kimia'];
+    if(p.includes('sejarah')||p.includes('history')) return AI_DEMO_RESPONSES['h2o-sejarah'];
+    if(p.includes('kehidupan')||p.includes('daily')) return AI_DEMO_RESPONSES['h2o-kehidupan'];
+    return AI_DEMO_RESPONSES['h2o-fisika'];
+  }
+  
+  // Exact matches for NaCl
+  if(p.includes('nacl')||p.includes('garam')||p.includes('salt')) {
+    if(p.includes('fisika')||p.includes('physics')) return AI_DEMO_RESPONSES['nacl-fisika'];
+    if(p.includes('kimia')||p.includes('chemistry')) return AI_DEMO_RESPONSES['nacl-kimia'];
+    if(p.includes('sejarah')||p.includes('history')) return AI_DEMO_RESPONSES['nacl-sejarah'];
+    if(p.includes('kehidupan')||p.includes('daily')) return AI_DEMO_RESPONSES['nacl-kehidupan'];
+    return AI_DEMO_RESPONSES['nacl-fisika'];
+  }
+  
+  // Element matches
+  if(p.includes('oksigen')||p.includes('oxygen')||p.includes('o2')) return AI_DEMO_RESPONSES['oksigen-general'];
+  if(p.includes('hidrogen')||p.includes('hydrogen')||p.includes('h2')) return AI_DEMO_RESPONSES['hidrogen-general'];
+  if(p.includes('nitrogen')||p.includes('nitrogen')||p.includes('n2')) return AI_DEMO_RESPONSES['nitrogen-general'];
+  if(p.includes('karbon')||p.includes('carbon')) return AI_DEMO_RESPONSES['karbon-general'];
+  if(p.includes('besi')||p.includes('iron')||p.includes('fe')) return AI_DEMO_RESPONSES['element-iron'];
+  if(p.includes('tembaga')||p.includes('copper')||p.includes('cu')) return AI_DEMO_RESPONSES['element-copper'];
+  
+  // Bonding matches
+  if(p.includes('ionik')) return AI_DEMO_RESPONSES['ikatan-ionik'];
+  if(p.includes('kovalen')) return AI_DEMO_RESPONSES['ikatan-kovalen'];
+  if(p.includes('hidrogen')||p.includes('hydrogen bond')) return AI_DEMO_RESPONSES['ikatan-hidrogen'];
+  if(p.includes('logam')||p.includes('metal')) return AI_DEMO_RESPONSES['ikatan-logam'];
+  
+  // Structure matches
+  if(p.includes('atom')||p.includes('struktur')||p.includes('structure')) return AI_DEMO_RESPONSES['atom-struktur'];
+  if(p.includes('proton')||p.includes('proton')) return AI_DEMO_RESPONSES['question-proton'];
+  if(p.includes('neutron')) return AI_DEMO_RESPONSES['proton-neutron'];
+  if(p.includes('elektron')||p.includes('electron')) return AI_DEMO_RESPONSES['question-elektron'];
+  if(p.includes('inti')||p.includes('nucleus')) return AI_DEMO_RESPONSES['question-inti'];
+  if(p.includes('isotop')) return AI_DEMO_RESPONSES['question-isotop'];
+  
+  // Periodic trends
+  if(p.includes('periodik')||p.includes('tren')||p.includes('trend')) return AI_DEMO_RESPONSES['periodik-tren'];
+  if(p.includes('ionisasi')||p.includes('ionization')) return AI_DEMO_RESPONSES['ionisasi-energi'];
+  if(p.includes('elektronegativitas')||p.includes('electronegativity')) return AI_DEMO_RESPONSES['elektronegativitas'];
+  
+  // Reactions
+  if(p.includes('pembakaran')||p.includes('combustion')||p.includes('bakar')) return AI_DEMO_RESPONSES['pembakaran'];
+  if(p.includes('redoks')||p.includes('redox')) return AI_DEMO_RESPONSES['redoks'];
+  if(p.includes('asam')||p.includes('acid')||p.includes('basa')||p.includes('base')) return AI_DEMO_RESPONSES['asam-basa'];
+  
+  // Quantity matches
+  if(p.includes('mol')||p.includes('mole')) {
+    if(p.includes('volume')) return AI_DEMO_RESPONSES['question-mol-volume'];
+    return AI_DEMO_RESPONSES['question-mol'];
+  }
+  if(p.includes('stoikiometri')||p.includes('stoichiometry')) return AI_DEMO_RESPONSES['question-stoikiometri'];
+  
+  // Default
+  return AI_DEMO_RESPONSES['default-response'];
+}
+
+
+function setApiKey(key){
+  OPENAI_API_KEY = key;
+  localStorage.setItem('OMNI_ATOM_API_KEY', key);
+  location.reload();
+}
+
+window.setProvider=(provider)=>{
+  AI_PROVIDER = provider;
+  localStorage.setItem('AI_PROVIDER', provider);
+  updateProviderUI();
+  updateProviderSections();
+};
+
+window.saveOpenAIKey=()=>{
+  const key = (document.getElementById('openai-key-input')?.value || '').trim();
+  if(key.length < 10) { alert('API key tidak valid'); return; }
+  OPENAI_API_KEY = key;
+  localStorage.setItem('OMNI_ATOM_API_KEY', key);
+  AI_PROVIDER = 'openai';
+  localStorage.setItem('AI_PROVIDER', 'openai');
+  updateProviderUI();
+  alert('OpenAI key tersimpan! Reload untuk aktif.');
+  location.reload();
+};
+
+window.saveGeminiKey=()=>{
+  const key = (document.getElementById('gemini-key-input')?.value || '').trim();
+  if(key.length < 10) { alert('API key tidak valid'); return; }
+  GEMINI_API_KEY = key;
+  localStorage.setItem('GEMINI_API_KEY', key);
+  AI_PROVIDER = 'gemini';
+  localStorage.setItem('AI_PROVIDER', 'gemini');
+  updateProviderUI();
+  alert('Gemini key tersimpan! Reload untuk aktif.');
+  location.reload();
+};
+
+window.saveGroqKey=()=>{
+  const key = (document.getElementById('groq-key-input')?.value || '').trim();
+  if(key.length < 10) { alert('API key tidak valid'); return; }
+  GROQ_API_KEY = key;
+  localStorage.setItem('GROQ_API_KEY', key);
+  AI_PROVIDER = 'groq';
+  localStorage.setItem('AI_PROVIDER', 'groq');
+  updateProviderUI();
+  alert('Groq key tersimpan! Reload untuk aktif.');
+  location.reload();
+};
+
+window.clearAllKeys=()=>{
+  if(!confirm('Hapus semua API key?')) return;
+  localStorage.removeItem('OMNI_ATOM_API_KEY');
+  localStorage.removeItem('GEMINI_API_KEY');
+  localStorage.removeItem('GROQ_API_KEY');
+  AI_PROVIDER = 'demo';
+  localStorage.setItem('AI_PROVIDER', 'demo');
+  updateProviderUI();
+  alert('Semua key dihapus. Mode demo aktif.');
+  location.reload();
+};
+
+function updateProviderUI(){
+  document.querySelectorAll('[id^="btn-provider-"]').forEach(btn => btn.classList.remove('active'));
+  document.getElementById('btn-provider-'+AI_PROVIDER)?.classList.add('active');
+  
+  const statusMap = {
+    'demo': '🔴 DEMO MODE (Data predefined CO₂, H₂O, NaCl)',
+    'groq': GROQ_API_KEY?.length>10 ? '🟢 GROQ AKTIF (Tercepat)' : '⚪ GROQ (Butuh key)',
+    'gemini': GEMINI_API_KEY?.length>10 ? '🟢 GEMINI AKTIF' : '⚪ GEMINI (Butuh key)',
+    'openai': OPENAI_API_KEY?.length>10 ? '🟢 OPENAI AKTIF' : '⚪ OPENAI (Butuh key)'
+  };
+  document.getElementById('api-status-text').innerHTML = `Status: <strong style="color:var(--accent);">${statusMap[AI_PROVIDER]}</strong>`;
+}
+
+function updateProviderSections(){
+  document.getElementById('groq-section').style.display = AI_PROVIDER==='groq'?'block':'none';
+  document.getElementById('gemini-section').style.display = AI_PROVIDER==='gemini'?'block':'none';
+  document.getElementById('openai-section').style.display = AI_PROVIDER==='openai'?'block':'none';
+}
+
+async function fetchCategoryMaterial(topic, category, wiki, pubchem){
+  const normalized=normalizeTopic(topic);
+  const known=MATERIAL_KNOWN[normalized];
+  if(known?.[category]) return known[category];
+  const context=[];
+  if(wiki?.summary?.extract) context.push(`Ringkasan Wikipedia: ${wiki.summary.extract}`);
+  if(pubchem?.MolecularFormula) context.push(`Rumus: ${pubchem.MolecularFormula}`);
+  if(pubchem?.MolecularWeight) context.push(`Massa molar: ${Number(pubchem.MolecularWeight).toFixed(2)} g/mol`);
+  const ctx=context.join(' ');
+  const prompts={
+    fisika:`Buat ringkasan materi fisika untuk topik "${topic}" dalam konteks atom dan fisika material, mencakup struktur atom, band gap, kristal, dan energi. Sertakan contoh aplikasi nyata. Gunakan bahasa Indonesia sederhana dan tidak pakai format JSON. ${ctx}`,
+    kimia:`Buat ringkasan materi kimia untuk topik "${topic}" mencakup sifat kimia, reaksi, ikatan, dan kegunaan dalam material. Sertakan contoh sederhana. Gunakan bahasa Indonesia sederhana dan tidak pakai format JSON. ${ctx}`,
+    sejarah:`Buat ringkasan sejarah penemuan "${topic}" termasuk tokoh penting dan eksperimen yang relevan, seperti Rutherford, Bohr, atau Mendeleev jika sesuai. Gunakan bahasa Indonesia mudah dipahami. ${ctx}`,
+    kehidupan:`Buat ringkasan hubungan "${topic}" dengan kehidupan sehari-hari, tubuh manusia, makanan, industri, dan lingkungan. Sebutkan contoh nyata dan visualisasi benda nyata. Gunakan bahasa Indonesia sederhana. ${ctx}`
+  };
+  const prompt=prompts[category]||`${topic} materi ${category}`;
+  const result=await callAi(prompt,360);
+  return result||MATERIAL_FALLBACK;
+}
+
+async function fetchWikiData(topic){
+  const domain = LANG==='id' ? 'id.wikipedia.org' : 'en.wikipedia.org';
+  const title = await searchWikiPage(topic, domain) || topic;
+  let summary = null;
+  let media = null;
+  try{
+    const s = await fetch(`https://${domain}/api/rest_v1/page/summary/${encodeURIComponent(title)}`);
+    if(s.ok) summary = await s.json();
+  }catch(e){}
+  try{
+    const m = await fetch(`https://${domain}/api/rest_v1/page/media-list/${encodeURIComponent(title)}`);
+    if(m.ok) media = await m.json();
+  }catch(e){}
+  return {title, summary, media};
+}
+
+async function searchWikiPage(topic, domain){
+  try{
+    const url = `https://${domain}/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(topic)}&format=json&origin=*`;
+    const res = await fetch(url);
+    const data = await res.json();
+    const hit = data?.query?.search?.[0];
+    return hit?.title || null;
+  }catch(e){ return null; }
+}
+
+async function fetchPubChemData(topic){
+  const base = 'https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound';
+  const paths = [
+    `/name/${encodeURIComponent(topic)}/property/MolecularFormula,MolecularWeight,CanonicalSMILES,IsomericSMILES/JSON`,
+    `/formula/${encodeURIComponent(topic)}/cids/JSON`
+  ];
+  try{
+    const r = await fetch(`${base}${paths[0]}`);
+    if(r.ok){
+      const data = await r.json();
+      const props = data?.PropertyTable?.Properties?.[0];
+      if(props) return {...props, source:'name'};
+    }
+  }catch(e){}
+  try{
+    const r = await fetch(`${base}${paths[1]}`);
+    if(r.ok){
+      const data = await r.json();
+      const cid = data?.IdentifierList?.CID?.[0];
+      if(cid){
+        const r2 = await fetch(`${base}/cid/${cid}/property/MolecularFormula,MolecularWeight,CanonicalSMILES,IsomericSMILES/JSON`);
+        if(r2.ok){
+          const data2 = await r2.json();
+          const props = data2?.PropertyTable?.Properties?.[0];
+          if(props) return {...props, source:'formula', cid};
+        }
+      }
+    }
+  }catch(e){}
+  return null;
+}
+
+function selectImage(wiki, normalized){
+  const imageUrl = wiki?.media?.items?.find(i=>i.type==='image' && i.original)?.original?.source;
+  if(imageUrl) return imageUrl;
+  const known = MATERIAL_KNOWN[normalized];
+  if(known?.image) return known.image;
+  return `https://source.unsplash.com/600x400/?${encodeURIComponent(wiki?.title || 'atom')}`;
+}
+
+function buildMaterialSection(title, text){
+  return `<div class="ip-section"><div class="ip-label">${title}</div><p>${text || MATERIAL_FALLBACK}</p></div>`;
+}
+
+function renderMaterialSections(data){
+  const imageHtml = data.image ? `<div style="margin:16px 0;text-align:center;"><img src="${data.image}" alt="${data.title}" loading="lazy" style="width:100%;border-radius:12px;max-height:240px;object-fit:cover;border:1px solid rgba(255,255,255,0.08);"></div>` : '';
+  return `
+    <div class="ip-section">
+      <div class="ip-label">Ringkasan umum</div>
+      <p><strong>${data.title}</strong></p>
+      <p>${data.general || MATERIAL_FALLBACK}</p>
+      ${data.formula?`<div style="margin-top:8px;font-size:12px;color:#a0aabb;"><strong>Rumus:</strong> ${data.formula}</div>`:''}
+      ${data.weight?`<div style="margin-top:4px;font-size:12px;color:#a0aabb;"><strong>Massa:</strong> ${data.weight} g/mol</div>`:''}
+    </div>
+    ${imageHtml}
+    ${buildMaterialSection(data.labels.fisika, data.fisika)}
+    ${buildMaterialSection(data.labels.kimia, data.kimia)}
+    ${buildMaterialSection(data.labels.sejarah, data.sejarah)}
+    ${buildMaterialSection(data.labels.kehidupan, data.kehidupan)}
+  `;
+}
+
+async function fetchMaterial(){
+  const input = document.getElementById('material-input').value.trim();
+  const res = document.getElementById('material-result');
+  if(!input) return;
+  res.className='tool-result show';
+  res.innerHTML=`<div class="ai-loading"><div class="dot-pulse"><span></span><span></span><span></span></div><span style="margin-left:6px;">Mengambil materi...</span></div>`;
+  const normalized = normalizeTopic(input);
+  const known = MATERIAL_KNOWN[normalized];
+  const wiki = await fetchWikiData(input);
+  const pubchem = await fetchPubChemData(input);
+  const image = selectImage(wiki, normalized);
+  const title = known?.q || wiki?.summary?.title || input;
+  const general = known?.general || wiki?.summary?.extract || wiki?.summary?.description || MATERIAL_FALLBACK;
+  const [fisikaText, kimiaText, sejarahText, kehidupanText] = await Promise.all([
+    fetchCategoryMaterial(input, 'fisika', wiki, pubchem),
+    fetchCategoryMaterial(input, 'kimia', wiki, pubchem),
+    fetchCategoryMaterial(input, 'sejarah', wiki, pubchem),
+    fetchCategoryMaterial(input, 'kehidupan', wiki, pubchem)
+  ]);
+  const data = {
+    title,
+    general,
+    formula: pubchem?.MolecularFormula || known?.q || '',
+    weight: pubchem?.MolecularWeight ? Number(pubchem.MolecularWeight).toFixed(2) : '',
+    image,
+    labels: {
+      fisika: LANG==='id'?'Fisika':'Physics',
+      kimia: LANG==='id'?'Kimia':'Chemistry',
+      sejarah: LANG==='id'?'Sejarah':'History',
+      kehidupan: LANG==='id'?'Kehidupan':'Life'
+    },
+    fisika: fisikaText,
+    kimia: kimiaText,
+    sejarah: sejarahText,
+    kehidupan: kehidupanText
+  };
+  res.innerHTML = renderMaterialSections(data);
+}
+
+window.askAi = async()=>{
+  const query = document.getElementById('ask-input').value.trim();
+  const res = document.getElementById('ask-result');
+  if(!query) return;
+  res.className='tool-result show';
+  res.innerHTML=`<div class="ai-loading"><div class="dot-pulse"><span></span><span></span><span></span></div><span style="margin-left:6px;">Menjawab pertanyaan...</span></div>`;
+  const prompt = `Jawab pertanyaan berikut tentang atom, unsur, atau senyawa dengan bahasa Indonesia yang mudah dipahami:
+
+${query}
+
+Berikan jawaban singkat dalam bentuk paragraf. Tidak perlu format JSON.`;
+  const answer = await callAi(prompt,300);
+  res.innerHTML = `<div style="font-size:13px;line-height:1.7;color:#c8d0e0;">${answer.replace(/\n/g,'<br>')}</div>`;
+}
+
+/* ───────────── TOOL: FORMULA ───────────── */
+window.explainFormula = async()=>{
+  const input=document.getElementById('formula-input').value.trim();
+  if(!input) return;
+  const res=document.getElementById('formula-result');
+  res.className='tool-result show';
+  res.innerHTML=`<div class="ai-loading"><div class="dot-pulse"><span></span><span></span><span></span></div><span style="margin-left:6px;">Memproses...</span></div>`;
+
+  const prompt=LANG==='id'
+    ?`Jelaskan senyawa "${input}" dengan format berikut (singkat dan menarik):\n• Terbentuk dari: [daftar unsur + ikatan]\n• Sifat utama: [2-3 sifat fisika/kimia penting]\n• Ditemukan di: [contoh nyata di kehidupan sehari-hari]\n• Fakta menarik: [satu fakta unik]\n\nGunakan bahasa Indonesia sederhana, cocok untuk pelajar SMA.`
+    :`Explain the compound "${input}" with this format (brief and engaging):\n• Made from: [list of elements + bonds]\n• Key properties: [2-3 important physical/chemical properties]\n• Found in: [real daily life examples]\n• Fun fact: [one unique fact]\n\nUse simple English, suitable for high school students.`;
+  const text = await callAi(prompt, 220);
+  res.innerHTML = `<div style="white-space:pre-wrap;">${text}</div>`;
+};
+
+/* ───────────── TOOL: BOND ───────────── */
+window.doBond = async()=>{
+  const a=document.getElementById('bond-a').value.trim();
+  const b=document.getElementById('bond-b').value.trim();
+  if(!a||!b) return;
+  const res=document.getElementById('bond-result');
+  res.className='tool-result show';
+  res.innerHTML=`<div class="ai-loading"><div class="dot-pulse"><span></span><span></span><span></span></div></div>`;
+
+  const prompt=LANG==='id'
+    ?`Analisis ikatan kimia antara "${a}" dan "${b}". Jelaskan:\n1. Jenis ikatan yang terbentuk (ionik/kovalen/logam/Van der Waals)\n2. Alasan jenis ikatan tersebut (berdasarkan elektronegativitas/sifat logam)\n3. Contoh senyawa yang terbentuk (jika ada)\n4. Contoh kegunaan sehari-hari\n\nJawab singkat, 4-6 baris, bahasa Indonesia sederhana.`
+    :`Analyze the chemical bond between "${a}" and "${b}". Explain:\n1. Type of bond formed (ionic/covalent/metallic/Van der Waals)\n2. Why that bond type (based on electronegativity/metallic properties)\n3. Example compound formed (if any)\n4. Daily life application\n\nAnswer briefly, 4-6 lines, simple English.`;
+  const text = await callAi(prompt, 220);
+  res.innerHTML = `<div style="white-space:pre-wrap;">${text}</div>`;
+};
+
+/* ───────────── QUIZ ───────────── */
+function startQuiz(){
+  const qs=[
+    {q:LANG==='id'?'Unsur apakah yang paling melimpah di alam semesta?':'What is the most abundant element in the universe?',
+     opts:['He','H','O','C'], ans:1},
+    {q:LANG==='id'?'Simbol kimia untuk Emas adalah?':'The chemical symbol for Gold is?',
+     opts:['Go','Gd','Au','Ag'], ans:2},
+    {q:LANG==='id'?'Unsur mana yang merupakan semikonduktor utama dalam chip komputer?':'Which element is the primary semiconductor in computer chips?',
+     opts:['Ge','Si','Ga','As'], ans:1},
+    {q:LANG==='id'?'Gas mulia paling ringan adalah?':'The lightest noble gas is?',
+     opts:['Ar','Ne','He','Kr'], ans:2},
+    {q:LANG==='id'?'Unsur apakah yang memberi warna merah pada sel darah?':'What element gives blood its red color?',
+     opts:['Cu','Zn','Fe','Co'], ans:2}
+  ];
+  let cur=0, score=0;
+  function renderQ(){
+    if(cur>=qs.length){
+      document.getElementById('quiz-content').innerHTML=
+        `<div style="text-align:center;padding:20px;">
+          <div style="font-size:40px;margin-bottom:12px;">${score>=4?'🏆':score>=2?'🌟':'📚'}</div>
+          <div style="font-family:var(--mono);font-size:20px;color:var(--accent);">${score}/${qs.length}</div>
+          <div style="color:var(--muted);margin-top:8px;font-size:13px;">
+            ${LANG==='id'?(score>=4?'Luar biasa!':score>=2?'Bagus!':'Terus belajar!'):(score>=4?'Excellent!':score>=2?'Good job!':'Keep learning!')}
+          </div>
+          <button class="tool-btn" style="margin-top:16px;" onclick="startQuiz()">
+            ${LANG==='id'?'COBA LAGI':'TRY AGAIN'}
+          </button>
+        </div>`;
+      return;
+    }
+    const q=qs[cur];
+    document.getElementById('quiz-content').innerHTML=
+      `<div style="font-size:13px;margin-bottom:16px;line-height:1.5;">${LANG==='id'?`Pertanyaan ${cur+1}/${qs.length}:`:`Question ${cur+1}/${qs.length}:`} <br><strong>${q.q}</strong></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+        ${q.opts.map((o,i)=>`<button class="tool-btn" onclick="answerQ(${i},${q.ans},${cur===qs.length-1})"
+          style="font-size:13px;font-family:var(--sans);">${o}</button>`).join('')}
+      </div>
+      <div id="q-feedback" style="margin-top:10px;font-size:13px;min-height:20px;"></div>`;
+  }
+  window.answerQ=(i,ans,isLast)=>{
+    const fb=document.getElementById('q-feedback');
+    if(i===ans){
+      score++;
+      fb.innerHTML=`<span style="color:var(--accent);">✓ ${LANG==='id'?'Benar!':'Correct!'}</span>`;
+    } else {
+      fb.innerHTML=`<span style="color:#ff6b6b;">✗ ${LANG==='id'?`Salah. Jawaban: ${qs[cur].opts[ans]}`:`Wrong. Answer: ${qs[cur].opts[ans]}`}</span>`;
+    }
+    cur++;
+    setTimeout(renderQ, 900);
+  };
+  renderQ();
+}
+
+/* ───────────── NAV ───────────── */
+window.startApp=()=>{
+  const l=document.getElementById('landing');
+  l.style.opacity='0'; l.style.visibility='hidden';
+  selectAtom(1);
+};
+window.sideAction=(a)=>{
+  if(a==='home'){
+    document.getElementById('landing').style.opacity='1';
+    document.getElementById('landing').style.visibility='visible';
+  } else if(a==='bond'){
+    document.getElementById('modal-bond').classList.add('open');
+  } else if(a==='quiz'){
+    document.getElementById('modal-quiz').classList.add('open');
+    startQuiz();
+  } else if(a==='legend'){
+    document.getElementById('modal-legend').classList.add('open');
+    renderLegend();
+  }
+};
+window.closeModal=(id)=>{
+  document.getElementById('modal-'+id).classList.remove('open');
+};
+window.openSettings=()=>{
+  updateProviderUI();
+  updateProviderSections();
+  document.getElementById('modal-settings').classList.add('open');
+};
+// Kompatibilitas untuk backward compatibility
+window.saveApiKey=()=>{ saveOpenAIKey(); };
+window.clearApiKey=()=>{
+  if(confirm('Hapus API key OpenAI? Anda akan kembali ke demo mode.')){
+    localStorage.removeItem('OMNI_ATOM_API_KEY');
+    AI_PROVIDER = 'demo';
+    localStorage.setItem('AI_PROVIDER', 'demo');
+    location.reload();
+  }
+};
+window.switchTab=(t)=>{
+  currTab=t;
+  document.querySelectorAll('.htab').forEach(b=>b.classList.remove('active'));
+  document.getElementById('htab-'+t).classList.add('active');
+  if(t==='fisika') setViz('band'); else setViz('atom');
+};
+window.switchIpTab=(t)=>{
+  currIpTab=t;
+  document.querySelectorAll('.iptab').forEach(b=>b.classList.remove('active'));
+  const tabs=['data','kimia','fisika','ai'];
+  document.querySelectorAll('.iptab')[tabs.indexOf(t)]?.classList.add('active');
+  renderIpTab();
+};
+window.selectAtom=(Z)=>{
+  currZ=Z;
+  document.querySelectorAll('.el-cell').forEach(e=>e.classList.remove('sel'));
+  const cel=document.querySelector(`.el-cell[data-z="${Z}"]`);
+  if(cel) cel.classList.add('sel');
+  updateContent();
+  buildViz();
+  // Auto-fetch material for selected element
+  const elem=ELEMENTS[Z];
+  if(elem) {
+    document.getElementById('material-input').value=elem.sym;
+    fetchMaterial();
+  }
+};
+window.setViz=(v)=>{ vizMode=v; buildViz();
+  document.querySelectorAll('.vctrl').forEach(b=>b.classList.remove('active'));
+  const map={atom:0,band:1,nuc:2};
+  document.querySelectorAll('.vctrl')[map[v]]?.classList.add('active');
+};
+function setLanguage(l){
+  LANG=l;
+  document.getElementById('lang-select').value=l;
+  document.getElementById('lang-landing').value=l;
+  applyLang();
+}
+
+/* ───────────── PERIODIC TABLE ───────────── */
+const LAYOUT=[
+  1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2,
+  3,4,0,0,0,0,0,0,0,0,0,0,5,6,7,8,9,10,
+  11,12,0,0,0,0,0,0,0,0,0,0,13,14,15,16,17,18,
+  19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,
+  37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,
+  55,56,57,72,73,74,75,76,77,78,79,80,81,82,83,84,85,86,
+  87,88,89,104,105,106,107,108,109,110,111,112,113,114,115,116,117,118,
+  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+  0,0,0,58,59,60,61,62,63,64,65,66,67,68,69,70,71,0,
+  0,0,90,91,92,93,94,95,96,97,98,99,100,101,102,103,0,0
+];
+const grid=document.getElementById('grid');
+LAYOUT.forEach(Z=>{
+  const cell=document.createElement('div');
+  if(Z===0){ cell.style.pointerEvents='none'; grid.appendChild(cell); return; }
+  const a=ELEMENTS[Z];
+  if(!a){ cell.className='el-cell'; cell.style.opacity='0.1';
+    cell.innerHTML=`<span>${Z}</span><strong>?</strong>`; grid.appendChild(cell); return; }
+  cell.className=`el-cell cc${a.cat}`;
+  cell.dataset.z=Z;
+  cell.onclick=()=>selectAtom(Z);
+  cell.innerHTML=`<span>${Z}</span><strong>${a.sym}</strong>`;
+  grid.appendChild(cell);
+});
+
+/* ───────────── LEGEND ───────────── */
+function renderLegend(){
+  const items=T[LANG].legend_items;
+  document.getElementById('m-legend-title').innerText=t('legend_title');
+  document.getElementById('legend-body').innerHTML=
+    `<ul style="list-style:none;padding:0;">`+
+    items.map(([c,n,d])=>`<li style="display:flex;gap:12px;align-items:flex-start;margin-bottom:12px;">
+      <span style="width:12px;height:12px;border-radius:2px;background:${c};flex-shrink:0;margin-top:2px;"></span>
+      <div><strong style="font-size:13px;">${n}</strong><br><span style="font-size:12px;color:var(--muted);">${d}</span></div>
+    </li>`).join('')+`</ul>`;
+}
+
+/* ───────────── SEARCH ───────────── */
+document.getElementById('header-search').addEventListener('input',e=>{
+  const q=e.target.value;
+  const Z=findAtom(q);
+  if(Z) selectAtom(Z);
+});
+
+/* ───────────── LANG SWITCHES ───────────── */
+document.getElementById('lang-select').addEventListener('change',e=>setLanguage(e.target.value));
+document.getElementById('lang-landing').addEventListener('change',e=>setLanguage(e.target.value));
+
+/* ───────────── 3D ───────────── */
+const cont=document.getElementById('container-3d');
+const sc=new THREE.Scene();
+const cam=new THREE.PerspectiveCamera(70,cont.clientWidth/cont.clientHeight,0.1,1000);
+cam.position.z=25;
+const ren=new THREE.WebGLRenderer({antialias:true,alpha:true});
+ren.setSize(cont.clientWidth,cont.clientHeight);
+ren.setClearColor(0,0);
+cont.appendChild(ren.domElement);
+const ctr=new OrbitControls(cam,ren.domElement);
+ctr.enableDamping=true;
+sc.add(new THREE.DirectionalLight(0xffffff,1.2));
+sc.add(new THREE.AmbientLight(0x888888));
+let grp;
+
+function buildViz(){
+  const d=ELEMENTS[currZ]; if(!d) return;
+  if(grp) sc.remove(grp);
+  grp=new THREE.Group();
+  if(vizMode==='atom'){
+    ctr.autoRotate=true; ctr.autoRotateSpeed=0.8;
+    const conf=getConf(currZ);
+    const nuc=new THREE.Mesh(new THREE.SphereGeometry(1.5+currZ*0.01),
+      new THREE.MeshPhongMaterial({color:0x00e5a0,emissive:0x003322}));
+    grp.add(nuc);
+    const shells=conf.shells;
+    Object.keys(shells).forEach((n,i)=>{
+      const count=shells[n]; const r=(+n)*4;
+      const ring=new THREE.Mesh(new THREE.RingGeometry(r,r+0.1,64),
+        new THREE.MeshBasicMaterial({color:0x334455,side:THREE.DoubleSide}));
+      ring.rotation.x=Math.PI/2; grp.add(ring);
+      for(let j=0;j<count;j++){
+        const el=new THREE.Mesh(new THREE.SphereGeometry(0.3),
+          new THREE.MeshPhongMaterial({color:0x6c63ff,emissive:0x110033}));
+        const ang=(2*Math.PI*j)/count;
+        el.position.set(Math.cos(ang)*r,0,Math.sin(ang)*r); grp.add(el);
+      }
+    });
+  } else if(vizMode==='band'){
+    ctr.autoRotate=false;
+    const vb=new THREE.Mesh(new THREE.BoxGeometry(12,5,3),
+      new THREE.MeshPhongMaterial({color:0x00e5a0,opacity:0.7,transparent:true}));
+    vb.position.y=-4.5; grp.add(vb);
+    const gap=d.bg||0;
+    const cb=new THREE.Mesh(new THREE.BoxGeometry(12,5,3),
+      new THREE.MeshPhongMaterial({color:0xff6b6b,opacity:0.6,transparent:true}));
+    cb.position.y=d.type==='Con'?-1:d.type==='SC'?2+gap*2:6+gap; grp.add(cb);
+  } else {
+    ctr.autoRotate=true; ctr.autoRotateSpeed=1.5;
+    const p=currZ, n=Math.round(d.mass)-p, total=p+n;
+    const r=Math.pow(total,1/3)*1.5;
+    for(let i=0;i<Math.min(total,200);i++){
+      const isP=i<p;
+      const s=new THREE.Mesh(new THREE.SphereGeometry(0.75),
+        new THREE.MeshPhongMaterial({color:isP?0xff4444:0x6688aa}));
+      const phi=Math.acos(1-2*(i+0.5)/Math.min(total,200));
+      const theta=Math.PI*(1+Math.sqrt(5))*(i+0.5);
+      s.position.setFromSphericalCoords(r,phi,theta); grp.add(s);
+    }
+  }
+  sc.add(grp);
+}
+
+function animate(){
+  requestAnimationFrame(animate);
+  ctr.update();
+  ren.render(sc,cam);
+}
+animate();
+
+window.addEventListener('resize',()=>{
+  const w=cont.clientWidth, h=cont.clientHeight;
+  ren.setSize(w,h); cam.aspect=w/h; cam.updateProjectionMatrix();
+});
+
+/* ───────────── INIT ───────────── */
+applyLang();
+updateProviderUI();
+updateProviderSections();
+</script>
+</body>
+</html>
+
+
